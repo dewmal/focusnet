@@ -8,6 +8,7 @@ import {
   TextInput,
   Alert,
   SafeAreaView,
+  Modal,
 } from 'react-native';
 import { router } from 'expo-router';
 import { ArrowLeft, Target, Calendar, Clock, Tag, Plus, Trash2, Save, ChevronDown } from 'lucide-react-native';
@@ -30,11 +31,8 @@ export default function CreateBlockScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   
-  // Dropdown states
-  const [showHourDropdown, setShowHourDropdown] = useState(false);
-  const [showMinuteDropdown, setShowMinuteDropdown] = useState(false);
-  const [showPeriodDropdown, setShowPeriodDropdown] = useState(false);
-  const [showDurationDropdown, setShowDurationDropdown] = useState(false);
+  // Modal dropdown states
+  const [activeDropdown, setActiveDropdown] = useState<'hour' | 'minute' | 'period' | 'duration' | null>(null);
 
   const predefinedColors = [
     '#FF6B35', '#2E8B8B', '#8B4F9F', '#4F8B3B', 
@@ -96,13 +94,6 @@ export default function CreateBlockScreen() {
     } catch (error) {
       console.error('Error loading categories:', error);
     }
-  };
-
-  const closeAllDropdowns = () => {
-    setShowHourDropdown(false);
-    setShowMinuteDropdown(false);
-    setShowPeriodDropdown(false);
-    setShowDurationDropdown(false);
   };
 
   const handleAddTask = () => {
@@ -193,6 +184,94 @@ export default function CreateBlockScreen() {
       const remainingMinutes = minutes % 60;
       return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
     }
+  };
+
+  const renderDropdownModal = () => {
+    if (!activeDropdown) return null;
+
+    let options: any[] = [];
+    let selectedValue: any = null;
+    let onSelect: (value: any) => void = () => {};
+    let title = '';
+
+    switch (activeDropdown) {
+      case 'hour':
+        options = hours;
+        selectedValue = startHour;
+        onSelect = setStartHour;
+        title = 'Select Hour';
+        break;
+      case 'minute':
+        options = minutes;
+        selectedValue = startMinute;
+        onSelect = setStartMinute;
+        title = 'Select Minute';
+        break;
+      case 'period':
+        options = periods;
+        selectedValue = startPeriod;
+        onSelect = setStartPeriod;
+        title = 'Select Period';
+        break;
+      case 'duration':
+        options = durationOptions;
+        selectedValue = selectedDuration;
+        onSelect = setSelectedDuration;
+        title = 'Select Duration';
+        break;
+    }
+
+    return (
+      <Modal
+        visible={true}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setActiveDropdown(null)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setActiveDropdown(null)}
+        >
+          <View style={styles.dropdownModal}>
+            <View style={styles.dropdownHeader}>
+              <Text style={styles.dropdownTitle}>{title}</Text>
+              <TouchableOpacity onPress={() => setActiveDropdown(null)}>
+                <Text style={styles.dropdownClose}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.dropdownList} showsVerticalScrollIndicator={false}>
+              {options.map((option, index) => {
+                const value = typeof option === 'object' ? option.value : option;
+                const label = typeof option === 'object' ? option.label : 
+                  (activeDropdown === 'minute' || activeDropdown === 'hour') ? 
+                    option.toString().padStart(2, '0') : option.toString();
+                const isSelected = selectedValue === value;
+                
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={[styles.dropdownOption, isSelected && styles.dropdownOptionSelected]}
+                    onPress={() => {
+                      onSelect(value);
+                      setActiveDropdown(null);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[
+                      styles.dropdownOptionText,
+                      isSelected && styles.dropdownOptionTextSelected
+                    ]}>
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    );
   };
 
   const styles = StyleSheet.create({
@@ -314,8 +393,6 @@ export default function CreateBlockScreen() {
     },
     timeDropdownContainer: {
       flex: 1,
-      position: 'relative',
-      zIndex: 1,
     },
     timeDropdownButton: {
       backgroundColor: colors.surface,
@@ -344,9 +421,7 @@ export default function CreateBlockScreen() {
       color: colors.text,
     },
     durationDropdownContainer: {
-      position: 'relative',
       marginBottom: 20,
-      zIndex: 1,
     },
     durationDropdownButton: {
       backgroundColor: colors.surface,
@@ -366,46 +441,6 @@ export default function CreateBlockScreen() {
       fontSize: 18,
       fontWeight: '700',
       color: colors.text,
-    },
-    dropdown: {
-      position: 'absolute',
-      top: '100%',
-      left: 0,
-      right: 0,
-      backgroundColor: colors.surface,
-      borderRadius: 12,
-      borderWidth: 2,
-      borderColor: colors.primary,
-      maxHeight: 160,
-      zIndex: 9999,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.4,
-      shadowRadius: 12,
-      elevation: 15,
-      marginTop: 4,
-    },
-    dropdownScroll: {
-      maxHeight: 160,
-    },
-    dropdownOption: {
-      paddingVertical: 14,
-      paddingHorizontal: 20,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border + '50',
-    },
-    dropdownOptionSelected: {
-      backgroundColor: colors.primary + '20',
-    },
-    dropdownOptionText: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: colors.text,
-      textAlign: 'center',
-    },
-    dropdownOptionTextSelected: {
-      color: colors.primary,
-      fontWeight: '700',
     },
     endTimeDisplay: {
       backgroundColor: colors.primary,
@@ -535,56 +570,65 @@ export default function CreateBlockScreen() {
     saveButtonText: {
       color: 'white',
     },
+    // Modal dropdown styles
+    modalOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    dropdownModal: {
+      backgroundColor: colors.surface,
+      borderRadius: 20,
+      width: '80%',
+      maxHeight: '60%',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.3,
+      shadowRadius: 20,
+      elevation: 10,
+    },
+    dropdownHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    dropdownTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    dropdownClose: {
+      fontSize: 20,
+      color: colors.textSecondary,
+      fontWeight: '600',
+    },
+    dropdownList: {
+      maxHeight: 300,
+    },
+    dropdownOption: {
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border + '30',
+    },
+    dropdownOptionSelected: {
+      backgroundColor: colors.primary + '20',
+    },
+    dropdownOptionText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+      textAlign: 'center',
+    },
+    dropdownOptionTextSelected: {
+      color: colors.primary,
+      fontWeight: '700',
+    },
   });
-
-  const Dropdown = ({ 
-    visible, 
-    onClose, 
-    options, 
-    onSelect, 
-    selectedValue,
-    style = {}
-  }: {
-    visible: boolean;
-    onClose: () => void;
-    options: any[];
-    onSelect: (value: any) => void;
-    selectedValue: any;
-    style?: any;
-  }) => {
-    if (!visible) return null;
-
-    return (
-      <View style={[styles.dropdown, style]}>
-        <ScrollView style={styles.dropdownScroll} showsVerticalScrollIndicator={false}>
-          {options.map((option, index) => {
-            const value = typeof option === 'object' ? option.value : option;
-            const label = typeof option === 'object' ? option.label : option.toString().padStart(2, '0');
-            const isSelected = selectedValue === value;
-            
-            return (
-              <TouchableOpacity
-                key={index}
-                style={[styles.dropdownOption, isSelected && styles.dropdownOptionSelected]}
-                onPress={() => {
-                  onSelect(value);
-                  onClose();
-                }}
-                activeOpacity={0.7}
-              >
-                <Text style={[
-                  styles.dropdownOptionText,
-                  isSelected && styles.dropdownOptionTextSelected
-                ]}>
-                  {label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
-    );
-  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -599,333 +643,290 @@ export default function CreateBlockScreen() {
         }
       />
 
-      <TouchableOpacity 
-        style={styles.container} 
-        activeOpacity={1} 
-        onPress={closeAllDropdowns}
-      >
-        {/* Content */}
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <View style={styles.content}>
-            {/* 1. Title Section */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
-                  <Target size={18} color={colors.primary} />
-                </View>
-                <View style={styles.sectionContent}>
-                  <Text style={styles.sectionTitle}>Block Title</Text>
-                  <Text style={styles.sectionDescription}>What will you focus on?</Text>
-                </View>
+      {/* Content */}
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          {/* 1. Title Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
+                <Target size={18} color={colors.primary} />
               </View>
-              <TextInput
-                style={[
-                  styles.titleInput,
-                  errors.title && styles.titleInputError
-                ]}
-                value={title}
-                onChangeText={(text) => {
-                  setTitle(text);
-                  if (errors.title) {
-                    const newErrors = { ...errors };
-                    delete newErrors.title;
-                    setErrors(newErrors);
-                  }
-                }}
-                placeholder="Enter a descriptive title..."
-                placeholderTextColor={colors.textSecondary}
-                maxLength={50}
-              />
-              {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
-            </View>
-
-            {/* 2. Tasks Section */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
-                  <Calendar size={18} color={colors.primary} />
-                </View>
-                <View style={styles.sectionContent}>
-                  <Text style={styles.sectionTitle}>Tasks</Text>
-                  <Text style={styles.sectionDescription}>What specific tasks will you complete?</Text>
-                </View>
-              </View>
-              <View style={styles.tasksContainer}>
-                {tasks.map((task, index) => (
-                  <View key={index} style={styles.taskRow}>
-                    <TextInput
-                      style={styles.taskInput}
-                      value={task}
-                      onChangeText={(value) => handleTaskChange(index, value)}
-                      placeholder={`Task ${index + 1}...`}
-                      placeholderTextColor={colors.textSecondary}
-                      maxLength={100}
-                    />
-                    {tasks.length > 1 && (
-                      <TouchableOpacity
-                        style={[styles.taskButton, styles.removeTaskButton]}
-                        onPress={() => handleRemoveTask(index)}
-                      >
-                        <Trash2 size={16} color={colors.error} />
-                      </TouchableOpacity>
-                    )}
-                  </View>
-                ))}
-                
-                {tasks.length < 5 && (
-                  <TouchableOpacity style={styles.addTaskRow} onPress={handleAddTask}>
-                    <Plus size={16} color={colors.textSecondary} />
-                    <Text style={styles.addTaskText}>Add another task</Text>
-                  </TouchableOpacity>
-                )}
+              <View style={styles.sectionContent}>
+                <Text style={styles.sectionTitle}>Block Title</Text>
+                <Text style={styles.sectionDescription}>What will you focus on?</Text>
               </View>
             </View>
+            <TextInput
+              style={[
+                styles.titleInput,
+                errors.title && styles.titleInputError
+              ]}
+              value={title}
+              onChangeText={(text) => {
+                setTitle(text);
+                if (errors.title) {
+                  const newErrors = { ...errors };
+                  delete newErrors.title;
+                  setErrors(newErrors);
+                }
+              }}
+              placeholder="Enter a descriptive title..."
+              placeholderTextColor={colors.textSecondary}
+              maxLength={50}
+            />
+            {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
+          </View>
 
-            {/* 3. Duration Section */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
-                  <Clock size={18} color={colors.primary} />
-                </View>
-                <View style={styles.sectionContent}>
-                  <Text style={styles.sectionTitle}>Time & Duration</Text>
-                  <Text style={styles.sectionDescription}>When will this happen?</Text>
-                </View>
+          {/* 2. Tasks Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
+                <Calendar size={18} color={colors.primary} />
               </View>
+              <View style={styles.sectionContent}>
+                <Text style={styles.sectionTitle}>Tasks</Text>
+                <Text style={styles.sectionDescription}>What specific tasks will you complete?</Text>
+              </View>
+            </View>
+            <View style={styles.tasksContainer}>
+              {tasks.map((task, index) => (
+                <View key={index} style={styles.taskRow}>
+                  <TextInput
+                    style={styles.taskInput}
+                    value={task}
+                    onChangeText={(value) => handleTaskChange(index, value)}
+                    placeholder={`Task ${index + 1}...`}
+                    placeholderTextColor={colors.textSecondary}
+                    maxLength={100}
+                  />
+                  {tasks.length > 1 && (
+                    <TouchableOpacity
+                      style={[styles.taskButton, styles.removeTaskButton]}
+                      onPress={() => handleRemoveTask(index)}
+                    >
+                      <Trash2 size={16} color={colors.error} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))}
               
-              <View style={styles.durationContainer}>
-                {/* Start Time Selection */}
-                <View style={styles.timeRow}>
-                  {/* Hour Dropdown */}
-                  <View style={styles.timeDropdownContainer}>
-                    <Text style={styles.timeDropdownLabel}>Hour</Text>
-                    <TouchableOpacity 
-                      style={[
-                        styles.timeDropdownButton,
-                        showHourDropdown && styles.timeDropdownButtonActive
-                      ]}
-                      onPress={() => {
-                        closeAllDropdowns();
-                        setShowHourDropdown(!showHourDropdown);
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.timeDropdownValue}>
-                        {startHour.toString().padStart(2, '0')}
-                      </Text>
-                      <ChevronDown size={20} color={colors.textSecondary} />
-                    </TouchableOpacity>
-                    <Dropdown
-                      visible={showHourDropdown}
-                      onClose={() => setShowHourDropdown(false)}
-                      options={hours}
-                      onSelect={setStartHour}
-                      selectedValue={startHour}
-                    />
-                  </View>
+              {tasks.length < 5 && (
+                <TouchableOpacity style={styles.addTaskRow} onPress={handleAddTask}>
+                  <Plus size={16} color={colors.textSecondary} />
+                  <Text style={styles.addTaskText}>Add another task</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
 
-                  {/* Minute Dropdown */}
-                  <View style={styles.timeDropdownContainer}>
-                    <Text style={styles.timeDropdownLabel}>Minute</Text>
-                    <TouchableOpacity 
-                      style={[
-                        styles.timeDropdownButton,
-                        showMinuteDropdown && styles.timeDropdownButtonActive
-                      ]}
-                      onPress={() => {
-                        closeAllDropdowns();
-                        setShowMinuteDropdown(!showMinuteDropdown);
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.timeDropdownValue}>
-                        {startMinute.toString().padStart(2, '0')}
-                      </Text>
-                      <ChevronDown size={20} color={colors.textSecondary} />
-                    </TouchableOpacity>
-                    <Dropdown
-                      visible={showMinuteDropdown}
-                      onClose={() => setShowMinuteDropdown(false)}
-                      options={minutes}
-                      onSelect={setStartMinute}
-                      selectedValue={startMinute}
-                    />
-                  </View>
-
-                  {/* Period Dropdown */}
-                  <View style={styles.timeDropdownContainer}>
-                    <Text style={styles.timeDropdownLabel}>Period</Text>
-                    <TouchableOpacity 
-                      style={[
-                        styles.timeDropdownButton,
-                        showPeriodDropdown && styles.timeDropdownButtonActive
-                      ]}
-                      onPress={() => {
-                        closeAllDropdowns();
-                        setShowPeriodDropdown(!showPeriodDropdown);
-                      }}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.timeDropdownValue}>{startPeriod}</Text>
-                      <ChevronDown size={20} color={colors.textSecondary} />
-                    </TouchableOpacity>
-                    <Dropdown
-                      visible={showPeriodDropdown}
-                      onClose={() => setShowPeriodDropdown(false)}
-                      options={periods}
-                      onSelect={setStartPeriod}
-                      selectedValue={startPeriod}
-                    />
-                  </View>
-                </View>
-                
-                {/* Duration Dropdown */}
-                <View style={styles.durationDropdownContainer}>
-                  <Text style={styles.timeDropdownLabel}>Duration</Text>
+          {/* 3. Duration Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
+                <Clock size={18} color={colors.primary} />
+              </View>
+              <View style={styles.sectionContent}>
+                <Text style={styles.sectionTitle}>Time & Duration</Text>
+                <Text style={styles.sectionDescription}>When will this happen?</Text>
+              </View>
+            </View>
+            
+            <View style={styles.durationContainer}>
+              {/* Start Time Selection */}
+              <View style={styles.timeRow}>
+                {/* Hour Dropdown */}
+                <View style={styles.timeDropdownContainer}>
+                  <Text style={styles.timeDropdownLabel}>Hour</Text>
                   <TouchableOpacity 
                     style={[
-                      styles.durationDropdownButton,
-                      showDurationDropdown && styles.durationDropdownButtonActive
+                      styles.timeDropdownButton,
+                      activeDropdown === 'hour' && styles.timeDropdownButtonActive
                     ]}
-                    onPress={() => {
-                      closeAllDropdowns();
-                      setShowDurationDropdown(!showDurationDropdown);
-                    }}
+                    onPress={() => setActiveDropdown('hour')}
                     activeOpacity={0.7}
                   >
-                    <Text style={styles.durationDropdownValue}>
-                      {durationOptions.find(d => d.value === selectedDuration)?.label || formatDuration(selectedDuration)}
+                    <Text style={styles.timeDropdownValue}>
+                      {startHour.toString().padStart(2, '0')}
                     </Text>
                     <ChevronDown size={20} color={colors.textSecondary} />
                   </TouchableOpacity>
-                  <Dropdown
-                    visible={showDurationDropdown}
-                    onClose={() => setShowDurationDropdown(false)}
-                    options={durationOptions}
-                    onSelect={setSelectedDuration}
-                    selectedValue={selectedDuration}
-                  />
                 </View>
-                
-                {/* End Time Display */}
-                <View style={styles.endTimeDisplay}>
-                  <Text style={styles.endTimeLabel}>ENDS AT</Text>
-                  <Text style={styles.endTimeText}>{calculateEndTime()}</Text>
-                </View>
-                
-                {errors.duration && <Text style={styles.errorText}>{errors.duration}</Text>}
-              </View>
-            </View>
 
-            {/* 4. Category Section */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
-                  <Tag size={18} color={colors.primary} />
-                </View>
-                <View style={styles.sectionContent}>
-                  <Text style={styles.sectionTitle}>Category</Text>
-                  <Text style={styles.sectionDescription}>What type of work is this?</Text>
-                </View>
-              </View>
-              <View style={styles.categoriesGrid}>
-                {categories.map((category) => (
-                  <TouchableOpacity
-                    key={category.id}
+                {/* Minute Dropdown */}
+                <View style={styles.timeDropdownContainer}>
+                  <Text style={styles.timeDropdownLabel}>Minute</Text>
+                  <TouchableOpacity 
                     style={[
-                      styles.categoryChip,
-                      selectedCategory?.id === category.id && styles.categoryChipSelected,
+                      styles.timeDropdownButton,
+                      activeDropdown === 'minute' && styles.timeDropdownButtonActive
                     ]}
-                    onPress={() => {
-                      setSelectedCategory(category);
-                      setCustomColor(category.color);
-                      if (errors.category) {
-                        const newErrors = { ...errors };
-                        delete newErrors.category;
-                        setErrors(newErrors);
-                      }
-                    }}
+                    onPress={() => setActiveDropdown('minute')}
                     activeOpacity={0.7}
                   >
-                    <View
-                      style={[styles.categoryDot, { backgroundColor: category.color }]}
-                    />
-                    <Text
-                      style={[
-                        styles.categoryText,
-                        selectedCategory?.id === category.id && styles.categoryTextSelected,
-                      ]}
-                    >
-                      {category.name}
+                    <Text style={styles.timeDropdownValue}>
+                      {startMinute.toString().padStart(2, '0')}
                     </Text>
+                    <ChevronDown size={20} color={colors.textSecondary} />
                   </TouchableOpacity>
-                ))}
-              </View>
-              {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
-            </View>
+                </View>
 
-            {/* 5. Color Section */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeader}>
-                <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
-                  <Target size={18} color={colors.primary} />
-                </View>
-                <View style={styles.sectionContent}>
-                  <Text style={styles.sectionTitle}>Custom Color</Text>
-                  <Text style={styles.sectionDescription}>Choose a color for this block</Text>
-                </View>
-              </View>
-              <View style={styles.colorsGrid}>
-                {predefinedColors.map((color) => (
-                  <TouchableOpacity
-                    key={color}
+                {/* Period Dropdown */}
+                <View style={styles.timeDropdownContainer}>
+                  <Text style={styles.timeDropdownLabel}>Period</Text>
+                  <TouchableOpacity 
                     style={[
-                      styles.colorOption,
-                      customColor === color && styles.colorOptionSelected,
+                      styles.timeDropdownButton,
+                      activeDropdown === 'period' && styles.timeDropdownButtonActive
                     ]}
-                    onPress={() => setCustomColor(color)}
+                    onPress={() => setActiveDropdown('period')}
                     activeOpacity={0.7}
                   >
-                    <View
-                      style={[styles.colorPreview, { backgroundColor: color }]}
-                    />
+                    <Text style={styles.timeDropdownValue}>{startPeriod}</Text>
+                    <ChevronDown size={20} color={colors.textSecondary} />
                   </TouchableOpacity>
-                ))}
+                </View>
               </View>
+              
+              {/* Duration Dropdown */}
+              <View style={styles.durationDropdownContainer}>
+                <Text style={styles.timeDropdownLabel}>Duration</Text>
+                <TouchableOpacity 
+                  style={[
+                    styles.durationDropdownButton,
+                    activeDropdown === 'duration' && styles.durationDropdownButtonActive
+                  ]}
+                  onPress={() => setActiveDropdown('duration')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.durationDropdownValue}>
+                    {durationOptions.find(d => d.value === selectedDuration)?.label || formatDuration(selectedDuration)}
+                  </Text>
+                  <ChevronDown size={20} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+              
+              {/* End Time Display */}
+              <View style={styles.endTimeDisplay}>
+                <Text style={styles.endTimeLabel}>ENDS AT</Text>
+                <Text style={styles.endTimeText}>{calculateEndTime()}</Text>
+              </View>
+              
+              {errors.duration && <Text style={styles.errorText}>{errors.duration}</Text>}
             </View>
           </View>
-        </ScrollView>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <TouchableOpacity
-            style={[styles.footerButton, styles.cancelButton]}
-            onPress={() => router.back()}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.buttonText, styles.cancelButtonText]}>Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.footerButton,
-              styles.saveButton,
-              isLoading && styles.saveButtonDisabled,
-            ]}
-            onPress={handleSave}
-            disabled={isLoading}
-            activeOpacity={0.8}
-          >
-            {isLoading ? (
-              <Text style={[styles.buttonText, styles.saveButtonText]}>Saving...</Text>
-            ) : (
-              <>
-                <Save size={16} color="white" />
-                <Text style={[styles.buttonText, styles.saveButtonText]}>Create Block</Text>
-              </>
-            )}
-          </TouchableOpacity>
+          {/* 4. Category Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
+                <Tag size={18} color={colors.primary} />
+              </View>
+              <View style={styles.sectionContent}>
+                <Text style={styles.sectionTitle}>Category</Text>
+                <Text style={styles.sectionDescription}>What type of work is this?</Text>
+              </View>
+            </View>
+            <View style={styles.categoriesGrid}>
+              {categories.map((category) => (
+                <TouchableOpacity
+                  key={category.id}
+                  style={[
+                    styles.categoryChip,
+                    selectedCategory?.id === category.id && styles.categoryChipSelected,
+                  ]}
+                  onPress={() => {
+                    setSelectedCategory(category);
+                    setCustomColor(category.color);
+                    if (errors.category) {
+                      const newErrors = { ...errors };
+                      delete newErrors.category;
+                      setErrors(newErrors);
+                    }
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View
+                    style={[styles.categoryDot, { backgroundColor: category.color }]}
+                  />
+                  <Text
+                    style={[
+                      styles.categoryText,
+                      selectedCategory?.id === category.id && styles.categoryTextSelected,
+                    ]}
+                  >
+                    {category.name}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
+          </View>
+
+          {/* 5. Color Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
+                <Target size={18} color={colors.primary} />
+              </View>
+              <View style={styles.sectionContent}>
+                <Text style={styles.sectionTitle}>Custom Color</Text>
+                <Text style={styles.sectionDescription}>Choose a color for this block</Text>
+              </View>
+            </View>
+            <View style={styles.colorsGrid}>
+              {predefinedColors.map((color) => (
+                <TouchableOpacity
+                  key={color}
+                  style={[
+                    styles.colorOption,
+                    customColor === color && styles.colorOptionSelected,
+                  ]}
+                  onPress={() => setCustomColor(color)}
+                  activeOpacity={0.7}
+                >
+                  <View
+                    style={[styles.colorPreview, { backgroundColor: color }]}
+                  />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
         </View>
-      </TouchableOpacity>
+      </ScrollView>
+
+      {/* Footer */}
+      <View style={styles.footer}>
+        <TouchableOpacity
+          style={[styles.footerButton, styles.cancelButton]}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
+          <Text style={[styles.buttonText, styles.cancelButtonText]}>Cancel</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.footerButton,
+            styles.saveButton,
+            isLoading && styles.saveButtonDisabled,
+          ]}
+          onPress={handleSave}
+          disabled={isLoading}
+          activeOpacity={0.8}
+        >
+          {isLoading ? (
+            <Text style={[styles.buttonText, styles.saveButtonText]}>Saving...</Text>
+          ) : (
+            <>
+              <Save size={16} color="white" />
+              <Text style={[styles.buttonText, styles.saveButtonText]}>Create Block</Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </View>
+
+      {/* Dropdown Modal */}
+      {renderDropdownModal()}
     </SafeAreaView>
   );
 }
