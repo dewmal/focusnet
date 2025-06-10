@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Ale
 import { Plus, Calendar, TrendingUp } from 'lucide-react-native';
 import TimeBlock, { TimeBlockData } from '@/components/TimeBlock';
 import TimeBlockModal from '@/components/TimeBlockModal';
+import MobileHeader from '@/components/MobileHeader';
 import { loadTimeBlocks, saveTimeBlocks } from '@/utils/storage';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -163,6 +164,10 @@ export default function TodayScreen() {
     );
   };
 
+  const handleNotificationsPress = () => {
+    Alert.alert('Notifications', 'You have 3 upcoming focus sessions today!');
+  };
+
   const getTodayStats = () => {
     const completed = blocks.filter(b => b.isCompleted).length;
     const total = blocks.length;
@@ -184,7 +189,6 @@ export default function TodayScreen() {
 
   const stats = getTodayStats();
   const currentHour = currentTime.getHours();
-  const currentMinute = currentTime.getMinutes();
   const todayDate = currentTime.toLocaleDateString('en-US', { 
     weekday: 'long', 
     month: 'long', 
@@ -199,24 +203,9 @@ export default function TodayScreen() {
     scrollView: {
       flex: 1,
     },
-    header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
+    content: {
       paddingHorizontal: 20,
-      paddingTop: 20,
-      paddingBottom: 16,
-    },
-    greeting: {
-      fontSize: 28,
-      fontWeight: '700',
-      color: colors.text,
-    },
-    date: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      fontWeight: '500',
-      marginTop: 2,
+      paddingTop: 16,
     },
     addButton: {
       backgroundColor: colors.primary,
@@ -234,6 +223,7 @@ export default function TodayScreen() {
     currentTimeContainer: {
       alignItems: 'center',
       paddingVertical: 16,
+      marginBottom: 8,
     },
     currentTime: {
       fontSize: 24,
@@ -248,7 +238,6 @@ export default function TodayScreen() {
     },
     statsContainer: {
       flexDirection: 'row',
-      paddingHorizontal: 20,
       gap: 12,
       marginBottom: 24,
     },
@@ -274,7 +263,6 @@ export default function TodayScreen() {
       fontWeight: '500',
     },
     blocksContainer: {
-      paddingHorizontal: 20,
       marginBottom: 24,
     },
     sectionTitle: {
@@ -299,7 +287,6 @@ export default function TodayScreen() {
       textAlign: 'center',
     },
     quickActions: {
-      paddingHorizontal: 20,
       paddingBottom: 32,
       gap: 12,
     },
@@ -334,78 +321,80 @@ export default function TodayScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>
-              Good {currentHour < 12 ? 'Morning' : currentHour < 17 ? 'Afternoon' : 'Evening'}
-            </Text>
-            <Text style={styles.date}>{todayDate}</Text>
-          </View>
+      {/* Mobile Header */}
+      <MobileHeader
+        title={`Good ${currentHour < 12 ? 'Morning' : currentHour < 17 ? 'Afternoon' : 'Evening'}`}
+        subtitle={todayDate}
+        showNotifications={true}
+        onNotificationsPress={handleNotificationsPress}
+        rightComponent={
           <TouchableOpacity style={styles.addButton} onPress={handleAddButtonPress}>
             <Plus size={24} color="white" />
           </TouchableOpacity>
-        </View>
+        }
+      />
 
-        {/* Current Time */}
-        <View style={styles.currentTimeContainer}>
-          <Text style={styles.currentTime}>
-            {formatTime12Hour(currentTime.toLocaleTimeString('en-US', { 
-              hour: '2-digit', 
-              minute: '2-digit',
-              hour12: false 
-            }))}
-          </Text>
-        </View>
-
-        {/* Stats Cards */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Calendar size={20} color={colors.primary} />
-            <Text style={styles.statNumber}>{stats.completed}/{stats.total}</Text>
-            <Text style={styles.statLabel}>Completed</Text>
-          </View>
-          <View style={styles.statCard}>
-            <TrendingUp size={20} color={colors.secondary} />
-            <Text style={styles.statNumber}>{Math.round(stats.totalMinutes / 60)}h</Text>
-            <Text style={styles.statLabel}>Scheduled</Text>
-          </View>
-        </View>
-
-        {/* Time Blocks */}
-        <View style={styles.blocksContainer}>
-          <Text style={styles.sectionTitle}>Today's Schedule</Text>
-          {blocks.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyText}>No time blocks scheduled</Text>
-              <Text style={styles.emptySubtext}>Tap the + button to create your first block</Text>
-            </View>
-          ) : (
-            blocks.map((block) => (
-              <TimeBlock
-                key={block.id}
-                block={block}
-                onPress={() => handleBlockPress(block)}
-                onStartFocus={() => handleStartFocus(block)}
-              />
-            ))
-          )}
-        </View>
-
-        {/* Quick Actions */}
-        <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.quickActionButton} onPress={handleAddQuickBlock}>
-            <Text style={styles.quickActionText}>Add Quick Block</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.quickActionButton, styles.secondaryAction]}
-            onPress={handleCopyYesterday}
-          >
-            <Text style={[styles.quickActionText, styles.secondaryActionText]}>
-              Copy Yesterday's Plan
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <View style={styles.content}>
+          {/* Current Time */}
+          <View style={styles.currentTimeContainer}>
+            <Text style={styles.currentTime}>
+              {formatTime12Hour(currentTime.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: false 
+              }))}
             </Text>
-          </TouchableOpacity>
+          </View>
+
+          {/* Stats Cards */}
+          <View style={styles.statsContainer}>
+            <View style={styles.statCard}>
+              <Calendar size={20} color={colors.primary} />
+              <Text style={styles.statNumber}>{stats.completed}/{stats.total}</Text>
+              <Text style={styles.statLabel}>Completed</Text>
+            </View>
+            <View style={styles.statCard}>
+              <TrendingUp size={20} color={colors.secondary} />
+              <Text style={styles.statNumber}>{Math.round(stats.totalMinutes / 60)}h</Text>
+              <Text style={styles.statLabel}>Scheduled</Text>
+            </View>
+          </View>
+
+          {/* Time Blocks */}
+          <View style={styles.blocksContainer}>
+            <Text style={styles.sectionTitle}>Today's Schedule</Text>
+            {blocks.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyText}>No time blocks scheduled</Text>
+                <Text style={styles.emptySubtext}>Tap the + button to create your first block</Text>
+              </View>
+            ) : (
+              blocks.map((block) => (
+                <TimeBlock
+                  key={block.id}
+                  block={block}
+                  onPress={() => handleBlockPress(block)}
+                  onStartFocus={() => handleStartFocus(block)}
+                />
+              ))
+            )}
+          </View>
+
+          {/* Quick Actions */}
+          <View style={styles.quickActions}>
+            <TouchableOpacity style={styles.quickActionButton} onPress={handleAddQuickBlock}>
+              <Text style={styles.quickActionText}>Add Quick Block</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.quickActionButton, styles.secondaryAction]}
+              onPress={handleCopyYesterday}
+            >
+              <Text style={[styles.quickActionText, styles.secondaryActionText]}>
+                Copy Yesterday's Plan
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
 

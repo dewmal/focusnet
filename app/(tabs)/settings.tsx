@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Switch, TextInput, Alert } from 'react-native';
 import { Palette, Bell, User, Moon, Sun, Plus, Trash2, CreditCard as Edit, RotateCcw } from 'lucide-react-native';
+import MobileHeader from '@/components/MobileHeader';
 import { loadCategories, saveCategories, BlockCategory, loadSettings, saveSettings, AppSettings, resetAllData, debugStorage } from '@/utils/storage';
 import { useTheme } from '@/contexts/ThemeContext';
 import ClockTimePicker from '@/components/ClockTimePicker';
@@ -195,26 +196,12 @@ export default function SettingsScreen() {
     scrollView: {
       flex: 1,
     },
-    header: {
-      alignItems: 'center',
-      paddingTop: 20,
-      paddingBottom: 16,
+    content: {
       paddingHorizontal: 20,
-    },
-    title: {
-      fontSize: 28,
-      fontWeight: '700',
-      color: colors.text,
-    },
-    subtitle: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      fontWeight: '500',
-      marginTop: 4,
+      paddingTop: 16,
     },
     section: {
       backgroundColor: colors.surface,
-      marginHorizontal: 20,
       marginBottom: 16,
       borderRadius: 12,
       padding: 20,
@@ -382,193 +369,197 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Mobile Header */}
+      <MobileHeader
+        title="Settings"
+        subtitle="Customize your FocusNest"
+        showNotifications={true}
+        onNotificationsPress={() => Alert.alert('Settings Notifications', 'Manage your notification preferences below.')}
+      />
+
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Settings</Text>
-          <Text style={styles.subtitle}>Customize your FocusNest</Text>
-        </View>
+        <View style={styles.content}>
+          {/* Appearance */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              {isDarkMode ? <Moon size={20} color={colors.primary} /> : <Sun size={20} color={colors.primary} />}
+              <Text style={styles.sectionTitle}>Appearance</Text>
+            </View>
+            
+            <View style={styles.settingItem}>
+              <Text style={styles.settingLabel}>Dark Mode</Text>
+              <Switch
+                value={isDarkMode}
+                onValueChange={toggleDarkMode}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor={isDarkMode ? '#FFF' : '#FFF'}
+              />
+            </View>
+          </View>
 
-        {/* Appearance */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            {isDarkMode ? <Moon size={20} color={colors.primary} /> : <Sun size={20} color={colors.primary} />}
-            <Text style={styles.sectionTitle}>Appearance</Text>
-          </View>
-          
-          <View style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Dark Mode</Text>
-            <Switch
-              value={isDarkMode}
-              onValueChange={toggleDarkMode}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={isDarkMode ? '#FFF' : '#FFF'}
-            />
-          </View>
-        </View>
-
-        {/* Notifications */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Bell size={20} color={colors.secondary} />
-            <Text style={styles.sectionTitle}>Notifications</Text>
-          </View>
-          
-          <View style={styles.settingItem}>
-            <Text style={styles.settingLabel}>Enable Notifications</Text>
-            <Switch
-              value={settings.notificationsEnabled}
-              onValueChange={(value) => handleSettingChange('notificationsEnabled', value)}
-              trackColor={{ false: colors.border, true: colors.secondary }}
-              thumbColor={settings.notificationsEnabled ? '#FFF' : '#FFF'}
-            />
-          </View>
-          
-          <Text style={styles.settingDescription}>
-            Get reminders when blocks start and end
-          </Text>
-        </View>
-
-        {/* Working Hours */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <User size={20} color={colors.accent} />
-            <Text style={styles.sectionTitle}>Working Hours</Text>
-          </View>
-          
-          <ClockTimePicker
-            value={settings.workingHours.start}
-            onTimeChange={(time) => handleWorkingHoursChange('start', time)}
-            label="Start Time"
-          />
-          
-          <ClockTimePicker
-            value={settings.workingHours.end}
-            onTimeChange={(time) => handleWorkingHoursChange('end', time)}
-            label="End Time"
-          />
-        </View>
-
-        {/* Default Duration */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Default Block Duration</Text>
-          <View style={styles.durationContainer}>
-            {durations.map((duration) => (
-              <TouchableOpacity
-                key={duration}
-                style={[
-                  styles.durationButton,
-                  settings.defaultDuration === duration && styles.selectedDuration
-                ]}
-                onPress={() => handleSettingChange('defaultDuration', duration)}
-              >
-                <Text
-                  style={[
-                    styles.durationText,
-                    settings.defaultDuration === duration && styles.selectedDurationText
-                  ]}
-                >
-                  {duration}min
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
-        {/* Categories */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Palette size={20} color={colors.accent} />
-            <Text style={styles.sectionTitle}>Block Categories</Text>
-          </View>
-          
-          {/* Add New Category */}
-          <View style={styles.addCategoryContainer}>
-            <TextInput
-              style={styles.categoryInput}
-              value={newCategoryName}
-              onChangeText={setNewCategoryName}
-              placeholder={editingCategory ? "Edit category name..." : "Add new category..."}
-              placeholderTextColor={colors.textSecondary}
-              returnKeyType="done"
-              onSubmitEditing={editingCategory ? handleSaveEdit : handleAddCategory}
-            />
-            <TouchableOpacity
-              style={[
-                styles.addCategoryButton,
-                editingCategory && styles.editButton,
-                isAddButtonDisabled && styles.addCategoryButtonDisabled
-              ]}
-              onPress={editingCategory ? handleSaveEdit : handleAddCategory}
-              disabled={isAddButtonDisabled}
-            >
-              <Plus size={20} color="white" />
-            </TouchableOpacity>
-          </View>
-          
-          {editingCategory && (
-            <TouchableOpacity
-              style={styles.cancelEditButton}
-              onPress={handleCancelEdit}
-            >
-              <Text style={styles.cancelEditText}>Cancel Edit</Text>
-            </TouchableOpacity>
-          )}
-
-          {/* Category List */}
-          <View style={styles.categoriesList}>
-            {categories.map((category) => (
-              <View key={category.id} style={styles.categoryItem}>
-                <View style={styles.categoryInfo}>
-                  <View
-                    style={[styles.categoryColor, { backgroundColor: category.color }]}
-                  />
-                  <Text style={styles.categoryName}>{category.name}</Text>
-                </View>
-                <View style={styles.categoryActions}>
-                  <TouchableOpacity
-                    style={styles.categoryActionButton}
-                    onPress={() => handleEditCategory(category)}
-                  >
-                    <Edit size={16} color={colors.textSecondary} />
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.categoryActionButton}
-                    onPress={() => handleDeleteCategory(category.id)}
-                  >
-                    <Trash2 size={16} color={colors.error} />
-                  </TouchableOpacity>
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* App Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About FocusNest</Text>
-          <Text style={styles.appVersion}>Version 1.0.0</Text>
-          <Text style={styles.appDescription}>
-            Your personal time blocking companion for better focus and productivity.
-          </Text>
-        </View>
-
-        {/* Reset Data */}
-        <View style={styles.section}>
-          <TouchableOpacity 
-            style={styles.dangerButton}
-            onPress={handleResetAllData}
-            disabled={isResetting}
-          >
-            <RotateCcw size={16} color="white" />
-            <Text style={styles.dangerButtonText}>
-              {isResetting ? 'Resetting...' : 'Reset All Data'}
+          {/* Notifications */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Bell size={20} color={colors.secondary} />
+              <Text style={styles.sectionTitle}>Notifications</Text>
+            </View>
+            
+            <View style={styles.settingItem}>
+              <Text style={styles.settingLabel}>Enable Notifications</Text>
+              <Switch
+                value={settings.notificationsEnabled}
+                onValueChange={(value) => handleSettingChange('notificationsEnabled', value)}
+                trackColor={{ false: colors.border, true: colors.secondary }}
+                thumbColor={settings.notificationsEnabled ? '#FFF' : '#FFF'}
+              />
+            </View>
+            
+            <Text style={styles.settingDescription}>
+              Get reminders when blocks start and end
             </Text>
-          </TouchableOpacity>
-          <Text style={styles.dangerDescription}>
-            This will delete all your blocks, reflections, categories, and settings.{'\n'}
-            This action cannot be undone.
-          </Text>
+          </View>
+
+          {/* Working Hours */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <User size={20} color={colors.accent} />
+              <Text style={styles.sectionTitle}>Working Hours</Text>
+            </View>
+            
+            <ClockTimePicker
+              value={settings.workingHours.start}
+              onTimeChange={(time) => handleWorkingHoursChange('start', time)}
+              label="Start Time"
+            />
+            
+            <ClockTimePicker
+              value={settings.workingHours.end}
+              onTimeChange={(time) => handleWorkingHoursChange('end', time)}
+              label="End Time"
+            />
+          </View>
+
+          {/* Default Duration */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Default Block Duration</Text>
+            <View style={styles.durationContainer}>
+              {durations.map((duration) => (
+                <TouchableOpacity
+                  key={duration}
+                  style={[
+                    styles.durationButton,
+                    settings.defaultDuration === duration && styles.selectedDuration
+                  ]}
+                  onPress={() => handleSettingChange('defaultDuration', duration)}
+                >
+                  <Text
+                    style={[
+                      styles.durationText,
+                      settings.defaultDuration === duration && styles.selectedDurationText
+                    ]}
+                  >
+                    {duration}min
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Categories */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <Palette size={20} color={colors.accent} />
+              <Text style={styles.sectionTitle}>Block Categories</Text>
+            </View>
+            
+            {/* Add New Category */}
+            <View style={styles.addCategoryContainer}>
+              <TextInput
+                style={styles.categoryInput}
+                value={newCategoryName}
+                onChangeText={setNewCategoryName}
+                placeholder={editingCategory ? "Edit category name..." : "Add new category..."}
+                placeholderTextColor={colors.textSecondary}
+                returnKeyType="done"
+                onSubmitEditing={editingCategory ? handleSaveEdit : handleAddCategory}
+              />
+              <TouchableOpacity
+                style={[
+                  styles.addCategoryButton,
+                  editingCategory && styles.editButton,
+                  isAddButtonDisabled && styles.addCategoryButtonDisabled
+                ]}
+                onPress={editingCategory ? handleSaveEdit : handleAddCategory}
+                disabled={isAddButtonDisabled}
+              >
+                <Plus size={20} color="white" />
+              </TouchableOpacity>
+            </View>
+            
+            {editingCategory && (
+              <TouchableOpacity
+                style={styles.cancelEditButton}
+                onPress={handleCancelEdit}
+              >
+                <Text style={styles.cancelEditText}>Cancel Edit</Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Category List */}
+            <View style={styles.categoriesList}>
+              {categories.map((category) => (
+                <View key={category.id} style={styles.categoryItem}>
+                  <View style={styles.categoryInfo}>
+                    <View
+                      style={[styles.categoryColor, { backgroundColor: category.color }]}
+                    />
+                    <Text style={styles.categoryName}>{category.name}</Text>
+                  </View>
+                  <View style={styles.categoryActions}>
+                    <TouchableOpacity
+                      style={styles.categoryActionButton}
+                      onPress={() => handleEditCategory(category)}
+                    >
+                      <Edit size={16} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.categoryActionButton}
+                      onPress={() => handleDeleteCategory(category.id)}
+                    >
+                      <Trash2 size={16} color={colors.error} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* App Info */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>About FocusNest</Text>
+            <Text style={styles.appVersion}>Version 1.0.0</Text>
+            <Text style={styles.appDescription}>
+              Your personal time blocking companion for better focus and productivity.
+            </Text>
+          </View>
+
+          {/* Reset Data */}
+          <View style={styles.section}>
+            <TouchableOpacity 
+              style={styles.dangerButton}
+              onPress={handleResetAllData}
+              disabled={isResetting}
+            >
+              <RotateCcw size={16} color="white" />
+              <Text style={styles.dangerButtonText}>
+                {isResetting ? 'Resetting...' : 'Reset All Data'}
+              </Text>
+            </TouchableOpacity>
+            <Text style={styles.dangerDescription}>
+              This will delete all your blocks, reflections, categories, and settings.{'\n'}
+              This action cannot be undone.
+            </Text>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>

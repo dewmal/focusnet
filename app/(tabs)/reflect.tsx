@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, TextInput, Alert } from 'react-native';
 import { Star, BookOpen, TrendingUp, Calendar } from 'lucide-react-native';
+import MobileHeader from '@/components/MobileHeader';
 import { loadTimeBlocks, loadReflections, saveReflection, DailyReflection } from '@/utils/storage';
 import { TimeBlockData } from '@/components/TimeBlock';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -117,25 +118,11 @@ export default function ReflectScreen() {
     scrollView: {
       flex: 1,
     },
-    header: {
-      alignItems: 'center',
-      paddingTop: 20,
-      paddingBottom: 16,
+    content: {
       paddingHorizontal: 20,
-    },
-    title: {
-      fontSize: 28,
-      fontWeight: '700',
-      color: colors.text,
-    },
-    subtitle: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      fontWeight: '500',
-      marginTop: 4,
+      paddingTop: 16,
     },
     summaryContainer: {
-      paddingHorizontal: 20,
       marginBottom: 24,
     },
     sectionTitle: {
@@ -170,7 +157,6 @@ export default function ReflectScreen() {
       fontWeight: '500',
     },
     blocksContainer: {
-      paddingHorizontal: 20,
       marginBottom: 24,
     },
     blockCard: {
@@ -239,7 +225,6 @@ export default function ReflectScreen() {
       lineHeight: 20,
     },
     reflectionContainer: {
-      paddingHorizontal: 20,
       marginBottom: 24,
     },
     ratingSection: {
@@ -312,7 +297,6 @@ export default function ReflectScreen() {
       fontWeight: '500',
     },
     previousReflections: {
-      paddingHorizontal: 20,
       marginBottom: 24,
     },
     reflectionCard: {
@@ -343,154 +327,158 @@ export default function ReflectScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Mobile Header */}
+      <MobileHeader
+        title="Daily Reflection"
+        subtitle="Learn and improve from today"
+        showNotifications={true}
+        onNotificationsPress={() => Alert.alert('Reflection Reminder', 'Don\'t forget to reflect on your completed sessions!')}
+      />
+
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Daily Reflection</Text>
-          <Text style={styles.subtitle}>Learn and improve from today</Text>
-        </View>
-
-        {/* Today's Summary */}
-        <View style={styles.summaryContainer}>
-          <Text style={styles.sectionTitle}>Today's Summary</Text>
-          <View style={styles.summaryGrid}>
-            <View style={styles.summaryCard}>
-              <BookOpen size={20} color={colors.primary} />
-              <Text style={styles.summaryNumber}>{completedBlocks.length}</Text>
-              <Text style={styles.summaryLabel}>Completed</Text>
-            </View>
-            <View style={styles.summaryCard}>
-              <Star size={20} color="#FFD700" />
-              <Text style={styles.summaryNumber}>{getAverageRating().toFixed(1)}</Text>
-              <Text style={styles.summaryLabel}>Avg Rating</Text>
-            </View>
-            <View style={styles.summaryCard}>
-              <TrendingUp size={20} color={colors.secondary} />
-              <Text style={styles.summaryNumber}>{todayReflections.length}</Text>
-              <Text style={styles.summaryLabel}>Reflected</Text>
+        <View style={styles.content}>
+          {/* Today's Summary */}
+          <View style={styles.summaryContainer}>
+            <Text style={styles.sectionTitle}>Today's Summary</Text>
+            <View style={styles.summaryGrid}>
+              <View style={styles.summaryCard}>
+                <BookOpen size={20} color={colors.primary} />
+                <Text style={styles.summaryNumber}>{completedBlocks.length}</Text>
+                <Text style={styles.summaryLabel}>Completed</Text>
+              </View>
+              <View style={styles.summaryCard}>
+                <Star size={20} color="#FFD700" />
+                <Text style={styles.summaryNumber}>{getAverageRating().toFixed(1)}</Text>
+                <Text style={styles.summaryLabel}>Avg Rating</Text>
+              </View>
+              <View style={styles.summaryCard}>
+                <TrendingUp size={20} color={colors.secondary} />
+                <Text style={styles.summaryNumber}>{todayReflections.length}</Text>
+                <Text style={styles.summaryLabel}>Reflected</Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        {/* Completed Blocks */}
-        {completedBlocks.length > 0 ? (
-          <View style={styles.blocksContainer}>
-            <Text style={styles.sectionTitle}>Reflect on Completed Blocks</Text>
-            {completedBlocks.map((block) => {
-              const hasReflection = todayReflections.some(r => r.blockId === block.id);
-              return (
-                <TouchableOpacity
-                  key={block.id}
-                  style={[
-                    styles.blockCard,
-                    { borderLeftColor: block.color },
-                    hasReflection && styles.reflectedBlock
-                  ]}
-                  onPress={() => handleBlockSelect(block)}
-                >
-                  <View style={styles.blockHeader}>
-                    <Text style={styles.blockTitle}>{block.title}</Text>
-                    <View style={styles.blockMeta}>
-                      <Text style={styles.blockTime}>
-                        {block.startTime} - {block.endTime}
-                      </Text>
-                      {hasReflection && (
-                        <View style={styles.reflectedBadge}>
-                          <Text style={styles.reflectedText}>✓ Reflected</Text>
-                        </View>
-                      )}
+          {/* Completed Blocks */}
+          {completedBlocks.length > 0 ? (
+            <View style={styles.blocksContainer}>
+              <Text style={styles.sectionTitle}>Reflect on Completed Blocks</Text>
+              {completedBlocks.map((block) => {
+                const hasReflection = todayReflections.some(r => r.blockId === block.id);
+                return (
+                  <TouchableOpacity
+                    key={block.id}
+                    style={[
+                      styles.blockCard,
+                      { borderLeftColor: block.color },
+                      hasReflection && styles.reflectedBlock
+                    ]}
+                    onPress={() => handleBlockSelect(block)}
+                  >
+                    <View style={styles.blockHeader}>
+                      <Text style={styles.blockTitle}>{block.title}</Text>
+                      <View style={styles.blockMeta}>
+                        <Text style={styles.blockTime}>
+                          {block.startTime} - {block.endTime}
+                        </Text>
+                        {hasReflection && (
+                          <View style={styles.reflectedBadge}>
+                            <Text style={styles.reflectedText}>✓ Reflected</Text>
+                          </View>
+                        )}
+                      </View>
                     </View>
-                  </View>
-                  <Text style={styles.blockCategory}>{block.category}</Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        ) : (
-          <View style={styles.emptyState}>
-            <Calendar size={48} color={colors.textSecondary} />
-            <Text style={styles.emptyTitle}>No Completed Blocks Yet</Text>
-            <Text style={styles.emptySubtitle}>
-              Complete some time blocks to start reflecting on your day
-            </Text>
-          </View>
-        )}
-
-        {/* Reflection Form */}
-        {selectedBlock && (
-          <View style={styles.reflectionContainer}>
-            <Text style={styles.sectionTitle}>
-              Reflecting on: {selectedBlock.title}
-            </Text>
-            
-            <View style={styles.ratingSection}>
-              <Text style={styles.ratingLabel}>How was your focus? (1-5 stars)</Text>
-              {renderStars(rating, setRating)}
+                    <Text style={styles.blockCategory}>{block.category}</Text>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
+          ) : (
+            <View style={styles.emptyState}>
+              <Calendar size={48} color={colors.textSecondary} />
+              <Text style={styles.emptyTitle}>No Completed Blocks Yet</Text>
+              <Text style={styles.emptySubtitle}>
+                Complete some time blocks to start reflecting on your day
+              </Text>
+            </View>
+          )}
 
-            <View style={styles.promptsSection}>
-              <Text style={styles.promptsLabel}>Reflection Prompts:</Text>
-              {getReflectionPrompts().map((prompt, index) => (
-                <Text key={index} style={styles.promptText}>• {prompt}</Text>
+          {/* Reflection Form */}
+          {selectedBlock && (
+            <View style={styles.reflectionContainer}>
+              <Text style={styles.sectionTitle}>
+                Reflecting on: {selectedBlock.title}
+              </Text>
+              
+              <View style={styles.ratingSection}>
+                <Text style={styles.ratingLabel}>How was your focus? (1-5 stars)</Text>
+                {renderStars(rating, setRating)}
+              </View>
+
+              <View style={styles.promptsSection}>
+                <Text style={styles.promptsLabel}>Reflection Prompts:</Text>
+                {getReflectionPrompts().map((prompt, index) => (
+                  <Text key={index} style={styles.promptText}>• {prompt}</Text>
+                ))}
+              </View>
+
+              <View style={styles.textInputSection}>
+                <Text style={styles.inputLabel}>Your Reflection</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={reflectionText}
+                  onChangeText={setReflectionText}
+                  placeholder="Share your thoughts about this time block..."
+                  placeholderTextColor={colors.textSecondary}
+                  multiline
+                  numberOfLines={6}
+                  textAlignVertical="top"
+                />
+              </View>
+
+              <TouchableOpacity
+                style={[
+                  styles.submitButton,
+                  { backgroundColor: selectedBlock.color },
+                  isSubmitting && styles.disabledButton
+                ]}
+                onPress={handleSubmitReflection}
+                disabled={isSubmitting}
+              >
+                <Text style={styles.submitButtonText}>
+                  {isSubmitting ? 'Saving...' : 'Save Reflection'}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.cancelButton}
+                onPress={() => {
+                  setSelectedBlock(null);
+                  setReflectionText('');
+                  setRating(0);
+                }}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Previous Reflections */}
+          {todayReflections.length > 0 && !selectedBlock && (
+            <View style={styles.previousReflections}>
+              <Text style={styles.sectionTitle}>Today's Reflections</Text>
+              {todayReflections.map((reflection, index) => (
+                <View key={index} style={styles.reflectionCard}>
+                  <View style={styles.reflectionHeader}>
+                    <Text style={styles.reflectionTitle}>{reflection.blockTitle}</Text>
+                    {renderStars(reflection.rating)}
+                  </View>
+                  <Text style={styles.reflectionContent}>{reflection.reflection}</Text>
+                </View>
               ))}
             </View>
-
-            <View style={styles.textInputSection}>
-              <Text style={styles.inputLabel}>Your Reflection</Text>
-              <TextInput
-                style={styles.textInput}
-                value={reflectionText}
-                onChangeText={setReflectionText}
-                placeholder="Share your thoughts about this time block..."
-                placeholderTextColor={colors.textSecondary}
-                multiline
-                numberOfLines={6}
-                textAlignVertical="top"
-              />
-            </View>
-
-            <TouchableOpacity
-              style={[
-                styles.submitButton,
-                { backgroundColor: selectedBlock.color },
-                isSubmitting && styles.disabledButton
-              ]}
-              onPress={handleSubmitReflection}
-              disabled={isSubmitting}
-            >
-              <Text style={styles.submitButtonText}>
-                {isSubmitting ? 'Saving...' : 'Save Reflection'}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() => {
-                setSelectedBlock(null);
-                setReflectionText('');
-                setRating(0);
-              }}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* Previous Reflections */}
-        {todayReflections.length > 0 && !selectedBlock && (
-          <View style={styles.previousReflections}>
-            <Text style={styles.sectionTitle}>Today's Reflections</Text>
-            {todayReflections.map((reflection, index) => (
-              <View key={index} style={styles.reflectionCard}>
-                <View style={styles.reflectionHeader}>
-                  <Text style={styles.reflectionTitle}>{reflection.blockTitle}</Text>
-                  {renderStars(reflection.rating)}
-                </View>
-                <Text style={styles.reflectionContent}>{reflection.reflection}</Text>
-              </View>
-            ))}
-          </View>
-        )}
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

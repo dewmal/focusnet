@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
 import { ChevronLeft, ChevronRight, ChartBar as BarChart3, ChartPie as PieChart } from 'lucide-react-native';
+import MobileHeader from '@/components/MobileHeader';
 import { loadTimeBlocks, saveTimeBlocks } from '@/utils/storage';
 import { TimeBlockData } from '@/components/TimeBlock';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -141,29 +142,16 @@ ${Object.entries(stats.categoryStats).map(([category, hours]) =>
     scrollView: {
       flex: 1,
     },
-    header: {
-      alignItems: 'center',
-      paddingTop: 20,
-      paddingBottom: 16,
+    content: {
       paddingHorizontal: 20,
-    },
-    title: {
-      fontSize: 28,
-      fontWeight: '700',
-      color: colors.text,
-    },
-    subtitle: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      fontWeight: '500',
-      marginTop: 4,
+      paddingTop: 16,
     },
     weekNavigation: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingHorizontal: 20,
       paddingVertical: 16,
+      marginBottom: 8,
     },
     navButton: {
       width: 40,
@@ -182,7 +170,6 @@ ${Object.entries(stats.categoryStats).map(([category, hours]) =>
     },
     statsGrid: {
       flexDirection: 'row',
-      paddingHorizontal: 20,
       gap: 12,
       marginBottom: 24,
     },
@@ -208,7 +195,6 @@ ${Object.entries(stats.categoryStats).map(([category, hours]) =>
       fontWeight: '500',
     },
     calendarContainer: {
-      paddingHorizontal: 20,
       marginBottom: 24,
     },
     sectionTitle: {
@@ -255,7 +241,6 @@ ${Object.entries(stats.categoryStats).map(([category, hours]) =>
       borderRadius: 3,
     },
     categoryContainer: {
-      paddingHorizontal: 20,
       marginBottom: 24,
     },
     categoryItem: {
@@ -294,7 +279,6 @@ ${Object.entries(stats.categoryStats).map(([category, hours]) =>
       borderRadius: 3,
     },
     insightsContainer: {
-      paddingHorizontal: 20,
       marginBottom: 24,
     },
     insightCard: {
@@ -316,7 +300,6 @@ ${Object.entries(stats.categoryStats).map(([category, hours]) =>
       color: colors.textSecondary,
     },
     actionsContainer: {
-      paddingHorizontal: 20,
       paddingBottom: 32,
       gap: 12,
     },
@@ -351,143 +334,147 @@ ${Object.entries(stats.categoryStats).map(([category, hours]) =>
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Mobile Header */}
+      <MobileHeader
+        title="Weekly Overview"
+        subtitle="Track your progress"
+        showNotifications={true}
+        onNotificationsPress={() => Alert.alert('Weekly Insights', 'You\'re on track to beat last week\'s focus time!')}
+      />
+
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Weekly Overview</Text>
-          <Text style={styles.subtitle}>Track your progress</Text>
-        </View>
-
-        {/* Week Navigation */}
-        <View style={styles.weekNavigation}>
-          <TouchableOpacity 
-            style={styles.navButton}
-            onPress={() => navigateWeek('prev')}
-          >
-            <ChevronLeft size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-          
-          <Text style={styles.weekRange}>{weekRange}</Text>
-          
-          <TouchableOpacity 
-            style={styles.navButton}
-            onPress={() => navigateWeek('next')}
-          >
-            <ChevronRight size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-        </View>
-
-        {/* Week Stats */}
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <BarChart3 size={24} color={colors.primary} />
-            <Text style={styles.statNumber}>{Math.round(stats.totalHours)}h</Text>
-            <Text style={styles.statLabel}>Total Planned</Text>
-          </View>
-          <View style={styles.statCard}>
-            <PieChart size={24} color={colors.secondary} />
-            <Text style={styles.statNumber}>
-              {Math.round((stats.completedBlocks / stats.totalBlocks) * 100)}%
-            </Text>
-            <Text style={styles.statLabel}>Completion</Text>
-          </View>
-        </View>
-
-        {/* Weekly Calendar Grid */}
-        <View style={styles.calendarContainer}>
-          <Text style={styles.sectionTitle}>Week at a Glance</Text>
-          <View style={styles.calendarGrid}>
-            {weekDates.map((date, index) => (
-              <View key={index} style={styles.dayColumn}>
-                <Text style={styles.dayName}>{dayNames[index]}</Text>
-                <Text style={styles.dayNumber}>{date.getDate()}</Text>
-                
-                <View style={styles.dayBlocks}>
-                  {blocks.slice(0, 4).map((block, blockIndex) => (
-                    <View 
-                      key={blockIndex}
-                      style={[
-                        styles.miniBlock, 
-                        { backgroundColor: block.color + '40' }
-                      ]}
-                    >
-                      <View 
-                        style={[
-                          styles.miniBlockFill, 
-                          { 
-                            backgroundColor: block.color,
-                            height: block.isCompleted ? '100%' : `${block.progress || 0}%`
-                          }
-                        ]} 
-                      />
-                    </View>
-                  ))}
-                </View>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Category Breakdown */}
-        <View style={styles.categoryContainer}>
-          <Text style={styles.sectionTitle}>Time by Category</Text>
-          {Object.entries(stats.categoryStats).map(([category, hours]) => {
-            const percentage = (hours / stats.totalHours) * 100;
-            const categoryColor = blocks.find(b => b.category === category)?.color || colors.textSecondary;
+        <View style={styles.content}>
+          {/* Week Navigation */}
+          <View style={styles.weekNavigation}>
+            <TouchableOpacity 
+              style={styles.navButton}
+              onPress={() => navigateWeek('prev')}
+            >
+              <ChevronLeft size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
             
-            return (
-              <View key={category} style={styles.categoryItem}>
-                <View style={styles.categoryHeader}>
-                  <View style={[styles.categoryDot, { backgroundColor: categoryColor }]} />
-                  <Text style={styles.categoryName}>{category}</Text>
-                  <Text style={styles.categoryHours}>{Math.round(hours)}h</Text>
-                </View>
-                <View style={styles.categoryBar}>
-                  <View 
-                    style={[
-                      styles.categoryBarFill, 
-                      { 
-                        width: `${percentage}%`,
-                        backgroundColor: categoryColor 
-                      }
-                    ]} 
-                  />
-                </View>
-              </View>
-            );
-          })}
-        </View>
+            <Text style={styles.weekRange}>{weekRange}</Text>
+            
+            <TouchableOpacity 
+              style={styles.navButton}
+              onPress={() => navigateWeek('next')}
+            >
+              <ChevronRight size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
 
-        {/* Weekly Insights */}
-        <View style={styles.insightsContainer}>
-          <Text style={styles.sectionTitle}>Weekly Insights</Text>
-          <View style={styles.insightCard}>
-            <Text style={styles.insightTitle}>🎯 Most Productive Day</Text>
-            <Text style={styles.insightText}>Tuesday - 6 blocks completed</Text>
+          {/* Week Stats */}
+          <View style={styles.statsGrid}>
+            <View style={styles.statCard}>
+              <BarChart3 size={24} color={colors.primary} />
+              <Text style={styles.statNumber}>{Math.round(stats.totalHours)}h</Text>
+              <Text style={styles.statLabel}>Total Planned</Text>
+            </View>
+            <View style={styles.statCard}>
+              <PieChart size={24} color={colors.secondary} />
+              <Text style={styles.statNumber}>
+                {Math.round((stats.completedBlocks / stats.totalBlocks) * 100)}%
+              </Text>
+              <Text style={styles.statLabel}>Completion</Text>
+            </View>
           </View>
-          <View style={styles.insightCard}>
-            <Text style={styles.insightTitle}>⚡ Favorite Focus Time</Text>
-            <Text style={styles.insightText}>9:00 AM - 11:00 AM</Text>
-          </View>
-          <View style={styles.insightCard}>
-            <Text style={styles.insightTitle}>📈 Improvement Streak</Text>
-            <Text style={styles.insightText}>3 days of hitting your goals!</Text>
-          </View>
-        </View>
 
-        {/* Action Buttons */}
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.actionButton} onPress={handleCopyThisWeek}>
-            <Text style={styles.actionButtonText}>Copy This Week</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.secondaryAction]}
-            onPress={handleExportSummary}
-          >
-            <Text style={[styles.actionButtonText, styles.secondaryActionText]}>
-              Export Summary
-            </Text>
-          </TouchableOpacity>
+          {/* Weekly Calendar Grid */}
+          <View style={styles.calendarContainer}>
+            <Text style={styles.sectionTitle}>Week at a Glance</Text>
+            <View style={styles.calendarGrid}>
+              {weekDates.map((date, index) => (
+                <View key={index} style={styles.dayColumn}>
+                  <Text style={styles.dayName}>{dayNames[index]}</Text>
+                  <Text style={styles.dayNumber}>{date.getDate()}</Text>
+                  
+                  <View style={styles.dayBlocks}>
+                    {blocks.slice(0, 4).map((block, blockIndex) => (
+                      <View 
+                        key={blockIndex}
+                        style={[
+                          styles.miniBlock, 
+                          { backgroundColor: block.color + '40' }
+                        ]}
+                      >
+                        <View 
+                          style={[
+                            styles.miniBlockFill, 
+                            { 
+                              backgroundColor: block.color,
+                              height: block.isCompleted ? '100%' : `${block.progress || 0}%`
+                            }
+                          ]} 
+                        />
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          {/* Category Breakdown */}
+          <View style={styles.categoryContainer}>
+            <Text style={styles.sectionTitle}>Time by Category</Text>
+            {Object.entries(stats.categoryStats).map(([category, hours]) => {
+              const percentage = (hours / stats.totalHours) * 100;
+              const categoryColor = blocks.find(b => b.category === category)?.color || colors.textSecondary;
+              
+              return (
+                <View key={category} style={styles.categoryItem}>
+                  <View style={styles.categoryHeader}>
+                    <View style={[styles.categoryDot, { backgroundColor: categoryColor }]} />
+                    <Text style={styles.categoryName}>{category}</Text>
+                    <Text style={styles.categoryHours}>{Math.round(hours)}h</Text>
+                  </View>
+                  <View style={styles.categoryBar}>
+                    <View 
+                      style={[
+                        styles.categoryBarFill, 
+                        { 
+                          width: `${percentage}%`,
+                          backgroundColor: categoryColor 
+                        }
+                      ]} 
+                    />
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Weekly Insights */}
+          <View style={styles.insightsContainer}>
+            <Text style={styles.sectionTitle}>Weekly Insights</Text>
+            <View style={styles.insightCard}>
+              <Text style={styles.insightTitle}>🎯 Most Productive Day</Text>
+              <Text style={styles.insightText}>Tuesday - 6 blocks completed</Text>
+            </View>
+            <View style={styles.insightCard}>
+              <Text style={styles.insightTitle}>⚡ Favorite Focus Time</Text>
+              <Text style={styles.insightText}>9:00 AM - 11:00 AM</Text>
+            </View>
+            <View style={styles.insightCard}>
+              <Text style={styles.insightTitle}>📈 Improvement Streak</Text>
+              <Text style={styles.insightText}>3 days of hitting your goals!</Text>
+            </View>
+          </View>
+
+          {/* Action Buttons */}
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity style={styles.actionButton} onPress={handleCopyThisWeek}>
+              <Text style={styles.actionButtonText}>Copy This Week</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.secondaryAction]}
+              onPress={handleExportSummary}
+            >
+              <Text style={[styles.actionButtonText, styles.secondaryActionText]}>
+                Export Summary
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
