@@ -10,7 +10,7 @@ import {
   Alert,
   Dimensions,
 } from 'react-native';
-import { X, Clock, Tag, Plus, Trash2, Save, Palette, Target, Calendar, ChevronUp, ChevronDown } from 'lucide-react-native';
+import { X, Clock, Tag, Plus, Trash2, Save, Target, Calendar, ChevronUp, ChevronDown } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { loadCategories, BlockCategory } from '@/utils/storage';
 import { TimeBlockData } from './TimeBlock';
@@ -107,6 +107,7 @@ export default function TimeBlockModal({
       setCategories(savedCategories);
       if (!selectedCategory && savedCategories.length > 0) {
         setSelectedCategory(savedCategories[0]);
+        setCustomColor(savedCategories[0].color);
       }
     } catch (error) {
       console.error('Error loading categories:', error);
@@ -133,11 +134,9 @@ export default function TimeBlockModal({
     const isStart = type === 'start';
     const currentHour = isStart ? startHour : endHour;
     const currentMinute = isStart ? startMinute : endMinute;
-    const currentPeriod = isStart ? startPeriod : endPeriod;
     
     let newHour = currentHour;
     let newMinute = currentMinute;
-    let newPeriod = currentPeriod;
 
     if (component === 'hour') {
       if (direction === 'up') {
@@ -156,11 +155,9 @@ export default function TimeBlockModal({
     if (isStart) {
       setStartHour(newHour);
       setStartMinute(newMinute);
-      setStartPeriod(newPeriod);
     } else {
       setEndHour(newHour);
       setEndMinute(newMinute);
-      setEndPeriod(newPeriod);
     }
   };
 
@@ -483,11 +480,11 @@ export default function TimeBlockModal({
     },
     timeComponent: {
       alignItems: 'center',
-      backgroundColor: colors.background,
+      backgroundColor: '#2A2A2A',
       borderRadius: 12,
       padding: 8,
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: '#404040',
     },
     timeButton: {
       width: 32,
@@ -495,7 +492,7 @@ export default function TimeBlockModal({
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: 8,
-      backgroundColor: colors.surface,
+      backgroundColor: '#1A1A1A',
     },
     timeDisplay: {
       paddingVertical: 12,
@@ -506,12 +503,12 @@ export default function TimeBlockModal({
     timeText: {
       fontSize: 20,
       fontWeight: '700',
-      color: colors.text,
+      color: '#FFFFFF',
     },
     timeSeparator: {
       fontSize: 24,
       fontWeight: '700',
-      color: colors.text,
+      color: '#FFFFFF',
       marginHorizontal: 4,
     },
     periodContainer: {
@@ -522,20 +519,20 @@ export default function TimeBlockModal({
       paddingVertical: 8,
       paddingHorizontal: 12,
       borderRadius: 8,
-      backgroundColor: colors.background,
+      backgroundColor: '#1A1A1A',
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: '#404040',
       alignItems: 'center',
       minWidth: 40,
     },
     periodButtonActive: {
-      backgroundColor: colors.primary,
-      borderColor: colors.primary,
+      backgroundColor: '#FF6B35',
+      borderColor: '#FF6B35',
     },
     periodText: {
       fontSize: 12,
       fontWeight: '600',
-      color: colors.textSecondary,
+      color: '#B0B0B0',
     },
     periodTextActive: {
       color: 'white',
@@ -560,6 +557,9 @@ export default function TimeBlockModal({
       fontSize: 18,
       fontWeight: '800',
       color: 'white',
+    },
+    categoriesContainer: {
+      marginBottom: 24,
     },
     categoriesGrid: {
       flexDirection: 'row',
@@ -638,13 +638,13 @@ export default function TimeBlockModal({
     },
     taskInput: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: '#2A2A2A',
       borderWidth: 2,
-      borderColor: colors.border,
+      borderColor: '#404040',
       borderRadius: 16,
       padding: 16,
       fontSize: 14,
-      color: colors.text,
+      color: '#FFFFFF',
       fontWeight: '500',
     },
     taskInputFocused: {
@@ -673,15 +673,15 @@ export default function TimeBlockModal({
       justifyContent: 'center',
       paddingVertical: 20,
       borderWidth: 2,
-      borderColor: colors.border,
+      borderColor: '#404040',
       borderStyle: 'dashed',
       borderRadius: 16,
       gap: 10,
-      backgroundColor: colors.background,
+      backgroundColor: '#2A2A2A',
     },
     addTaskText: {
       fontSize: 14,
-      color: colors.textSecondary,
+      color: '#B0B0B0',
       fontWeight: '600',
     },
     footer: {
@@ -833,6 +833,48 @@ export default function TimeBlockModal({
                 </View>
               </View>
 
+              {/* Tasks Section - Moved after title */}
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
+                    <Calendar size={18} color={colors.primary} />
+                  </View>
+                  <View style={styles.sectionContent}>
+                    <Text style={styles.sectionTitle}>Tasks</Text>
+                    <Text style={styles.sectionDescription}>What specific tasks will you complete?</Text>
+                  </View>
+                </View>
+                <View style={styles.tasksContainer}>
+                  {tasks.map((task, index) => (
+                    <View key={index} style={styles.taskRow}>
+                      <TextInput
+                        style={styles.taskInput}
+                        value={task}
+                        onChangeText={(value) => handleTaskChange(index, value)}
+                        placeholder={`Task ${index + 1}...`}
+                        placeholderTextColor="#666666"
+                        maxLength={100}
+                      />
+                      {tasks.length > 1 && (
+                        <TouchableOpacity
+                          style={[styles.taskButton, styles.removeTaskButton]}
+                          onPress={() => handleRemoveTask(index)}
+                        >
+                          <Trash2 size={16} color={colors.error} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  ))}
+                  
+                  {tasks.length < 5 && (
+                    <TouchableOpacity style={styles.addTaskRow} onPress={handleAddTask}>
+                      <Plus size={16} color="#B0B0B0" />
+                      <Text style={styles.addTaskText}>Add another task</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+
               {/* Category Section */}
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
@@ -897,48 +939,6 @@ export default function TimeBlockModal({
                       </TouchableOpacity>
                     ))}
                   </View>
-                </View>
-              </View>
-
-              {/* Tasks Section */}
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
-                    <Calendar size={18} color={colors.primary} />
-                  </View>
-                  <View style={styles.sectionContent}>
-                    <Text style={styles.sectionTitle}>Tasks</Text>
-                    <Text style={styles.sectionDescription}>What specific tasks will you complete?</Text>
-                  </View>
-                </View>
-                <View style={styles.tasksContainer}>
-                  {tasks.map((task, index) => (
-                    <View key={index} style={styles.taskRow}>
-                      <TextInput
-                        style={styles.taskInput}
-                        value={task}
-                        onChangeText={(value) => handleTaskChange(index, value)}
-                        placeholder={`Task ${index + 1}...`}
-                        placeholderTextColor={colors.textSecondary}
-                        maxLength={100}
-                      />
-                      {tasks.length > 1 && (
-                        <TouchableOpacity
-                          style={[styles.taskButton, styles.removeTaskButton]}
-                          onPress={() => handleRemoveTask(index)}
-                        >
-                          <Trash2 size={16} color={colors.error} />
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  ))}
-                  
-                  {tasks.length < 5 && (
-                    <TouchableOpacity style={styles.addTaskRow} onPress={handleAddTask}>
-                      <Plus size={16} color={colors.textSecondary} />
-                      <Text style={styles.addTaskText}>Add another task</Text>
-                    </TouchableOpacity>
-                  )}
                 </View>
               </View>
             </View>
