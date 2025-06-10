@@ -39,9 +39,7 @@ export default function TimeBlockModal({
   const [startHour, setStartHour] = useState(9);
   const [startMinute, setStartMinute] = useState(0);
   const [startPeriod, setStartPeriod] = useState<'AM' | 'PM'>('AM');
-  const [endHour, setEndHour] = useState(10);
-  const [endMinute, setEndMinute] = useState(0);
-  const [endPeriod, setEndPeriod] = useState<'AM' | 'PM'>('AM');
+  const [selectedDuration, setSelectedDuration] = useState(60); // in minutes
   const [selectedCategory, setSelectedCategory] = useState<BlockCategory | null>(null);
   const [customColor, setCustomColor] = useState('#FF6B35');
   const [tasks, setTasks] = useState<string[]>(['']);
@@ -49,13 +47,14 @@ export default function TimeBlockModal({
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   const [showTimePickerModal, setShowTimePickerModal] = useState(false);
-  const [timePickerType, setTimePickerType] = useState<'start' | 'end'>('start');
 
   const predefinedColors = [
     '#FF6B35', '#2E8B8B', '#8B4F9F', '#4F8B3B', 
     '#B85C38', '#6B4E7D', '#7D6B4E', '#FF4444',
     '#FFB800', '#4CAF50', '#2196F3', '#9C27B0'
   ];
+
+  const durationOptions = [15, 30, 45, 60, 90, 120, 180, 240]; // in minutes
 
   useEffect(() => {
     if (visible) {
@@ -67,33 +66,33 @@ export default function TimeBlockModal({
   useEffect(() => {
     if (editingBlock) {
       setTitle(editingBlock.title);
-      parseTime(editingBlock.startTime, 'start');
-      parseTime(editingBlock.endTime, 'end');
+      parseStartTime(editingBlock.startTime);
+      calculateDurationFromTimes(editingBlock.startTime, editingBlock.endTime);
       setCustomColor(editingBlock.color);
       setTasks(editingBlock.tasks.length > 0 ? editingBlock.tasks : ['']);
       
       const category = categories.find(c => c.name === editingBlock.category);
       setSelectedCategory(category || null);
     } else {
-      if (initialStartTime) parseTime(initialStartTime, 'start');
-      if (initialEndTime) parseTime(initialEndTime, 'end');
+      if (initialStartTime) parseStartTime(initialStartTime);
     }
-  }, [editingBlock, categories, initialStartTime, initialEndTime]);
+  }, [editingBlock, categories, initialStartTime]);
 
-  const parseTime = (timeString: string, type: 'start' | 'end') => {
+  const parseStartTime = (timeString: string) => {
     const [hour, minute] = timeString.split(':').map(Number);
     const period = hour >= 12 ? 'PM' : 'AM';
     const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
     
-    if (type === 'start') {
-      setStartHour(displayHour);
-      setStartMinute(minute);
-      setStartPeriod(period);
-    } else {
-      setEndHour(displayHour);
-      setEndMinute(minute);
-      setEndPeriod(period);
-    }
+    setStartHour(displayHour);
+    setStartMinute(minute);
+    setStartPeriod(period);
+  };
+
+  const calculateDurationFromTimes = (startTime: string, endTime: string) => {
+    const start = new Date(`2000-01-01 ${startTime}`);
+    const end = new Date(`2000-01-01 ${endTime}`);
+    const durationMinutes = (end.getTime() - start.getTime()) / (1000 * 60);
+    setSelectedDuration(durationMinutes);
   };
 
   const formatTimeTo24Hour = (hour: number, minute: number, period: 'AM' | 'PM') => {
@@ -105,6 +104,19 @@ export default function TimeBlockModal({
 
   const formatTime12Hour = (hour: number, minute: number, period: 'AM' | 'PM') => {
     return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')} ${period}`;
+  };
+
+  const calculateEndTime = () => {
+    const startTime24 = formatTimeTo24Hour(startHour, startMinute, startPeriod);
+    const start = new Date(`2000-01-01 ${startTime24}`);
+    const end = new Date(start.getTime() + selectedDuration * 60000);
+    
+    const endHour = end.getHours();
+    const endMinute = end.getMinutes();
+    const endPeriod = endHour >= 12 ? 'PM' : 'AM';
+    const displayEndHour = endHour === 0 ? 12 : endHour > 12 ? endHour - 12 : endHour;
+    
+    return formatTime12Hour(displayEndHour, endMinute, endPeriod);
   };
 
   const loadCategoriesData = async () => {
@@ -126,9 +138,7 @@ export default function TimeBlockModal({
       setStartHour(9);
       setStartMinute(0);
       setStartPeriod('AM');
-      setEndHour(10);
-      setEndMinute(0);
-      setEndPeriod('AM');
+      setSelectedDuration(60);
       setCustomColor('#FF6B35');
       setTasks(['']);
       setSelectedCategory(categories[0] || null);
@@ -136,47 +146,19 @@ export default function TimeBlockModal({
     }
   };
 
-  const openTimePicker = (type: 'start' | 'end') => {
-    setTimePickerType(type);
-    setShowTimePickerModal(true);
-  };
-
   const adjustTime = (component: 'hour' | 'minute', direction: 'up' | 'down') => {
-    const isStart = timePickerType === 'start';
-    const currentHour = isStart ? startHour : endHour;
-    const currentMinute = isStart ? startMinute : endMinute;
-    
-    let newHour = currentHour;
-    let newMinute = currentMinute;
-
     if (component === 'hour') {
       if (direction === 'up') {
-        newHour = currentHour === 12 ? 1 : currentHour + 1;
+        setStartHour(startHour === 12 ? 1 : startHour + 1);
       } else {
-        newHour = currentHour === 1 ? 12 : currentHour - 1;
+        setStartHour(startHour === 1 ? 12 : startHour - 1);
       }
     } else {
       if (direction === 'up') {
-        newMinute = currentMinute === 55 ? 0 : currentMinute + 5;
+        setStartMinute(startMinute === 55 ? 0 : startMinute + 5);
       } else {
-        newMinute = currentMinute === 0 ? 55 : currentMinute - 5;
+        setStartMinute(startMinute === 0 ? 55 : startMinute - 5);
       }
-    }
-
-    if (isStart) {
-      setStartHour(newHour);
-      setStartMinute(newMinute);
-    } else {
-      setEndHour(newHour);
-      setEndMinute(newMinute);
-    }
-  };
-
-  const togglePeriod = () => {
-    if (timePickerType === 'start') {
-      setStartPeriod(startPeriod === 'AM' ? 'PM' : 'AM');
-    } else {
-      setEndPeriod(endPeriod === 'AM' ? 'PM' : 'AM');
     }
   };
 
@@ -210,18 +192,8 @@ export default function TimeBlockModal({
       newErrors.category = 'Please select a category';
     }
 
-    const startTime24 = formatTimeTo24Hour(startHour, startMinute, startPeriod);
-    const endTime24 = formatTimeTo24Hour(endHour, endMinute, endPeriod);
-    const start = new Date(`2000-01-01 ${startTime24}`);
-    const end = new Date(`2000-01-01 ${endTime24}`);
-    
-    if (end <= start) {
-      newErrors.time = 'End time must be after start time';
-    }
-
-    const duration = (end.getTime() - start.getTime()) / (1000 * 60);
-    if (duration < 15) {
-      newErrors.time = 'Time block must be at least 15 minutes long';
+    if (selectedDuration < 15) {
+      newErrors.duration = 'Duration must be at least 15 minutes';
     }
 
     setErrors(newErrors);
@@ -235,7 +207,11 @@ export default function TimeBlockModal({
     try {
       const filteredTasks = tasks.filter(task => task.trim() !== '');
       const startTime = formatTimeTo24Hour(startHour, startMinute, startPeriod);
-      const endTime = formatTimeTo24Hour(endHour, endMinute, endPeriod);
+      
+      // Calculate end time based on duration
+      const start = new Date(`2000-01-01 ${startTime}`);
+      const end = new Date(start.getTime() + selectedDuration * 60000);
+      const endTime = `${end.getHours().toString().padStart(2, '0')}:${end.getMinutes().toString().padStart(2, '0')}`;
       
       const blockData: TimeBlockData = {
         id: editingBlock?.id || Date.now().toString(),
@@ -265,13 +241,7 @@ export default function TimeBlockModal({
     }
   };
 
-  const getDuration = () => {
-    const startTime24 = formatTimeTo24Hour(startHour, startMinute, startPeriod);
-    const endTime24 = formatTimeTo24Hour(endHour, endMinute, endPeriod);
-    const start = new Date(`2000-01-01 ${startTime24}`);
-    const end = new Date(`2000-01-01 ${endTime24}`);
-    const minutes = (end.getTime() - start.getTime()) / (1000 * 60);
-    
+  const formatDuration = (minutes: number) => {
     if (minutes < 60) {
       return `${minutes}m`;
     } else {
@@ -281,149 +251,129 @@ export default function TimeBlockModal({
     }
   };
 
-  const TimePickerModal = () => {
-    const currentHour = timePickerType === 'start' ? startHour : endHour;
-    const currentMinute = timePickerType === 'start' ? startMinute : endMinute;
-    const currentPeriod = timePickerType === 'start' ? startPeriod : endPeriod;
+  const TimePickerModal = () => (
+    <Modal
+      visible={showTimePickerModal}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setShowTimePickerModal(false)}
+    >
+      <View style={styles.timePickerModalOverlay}>
+        <View style={styles.timePickerModalContent}>
+          <View style={styles.timePickerHeader}>
+            <Text style={styles.timePickerTitle}>Select Start Time</Text>
+            <TouchableOpacity
+              style={styles.timePickerCloseButton}
+              onPress={() => setShowTimePickerModal(false)}
+            >
+              <X size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
 
-    return (
-      <Modal
-        visible={showTimePickerModal}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setShowTimePickerModal(false)}
-      >
-        <View style={styles.timePickerModalOverlay}>
-          <View style={styles.timePickerModalContent}>
-            <View style={styles.timePickerHeader}>
-              <Text style={styles.timePickerTitle}>
-                Select {timePickerType === 'start' ? 'Start' : 'End'} Time
-              </Text>
-              <TouchableOpacity
-                style={styles.timePickerCloseButton}
-                onPress={() => setShowTimePickerModal(false)}
+          <View style={styles.timePickerDisplay}>
+            <Text style={styles.timePickerDisplayText}>
+              {formatTime12Hour(startHour, startMinute, startPeriod)}
+            </Text>
+          </View>
+
+          <View style={styles.timePickerControls}>
+            {/* Hour Control */}
+            <View style={styles.timePickerColumn}>
+              <Text style={styles.timePickerColumnLabel}>Hour</Text>
+              <TouchableOpacity 
+                style={styles.timePickerButton}
+                onPress={() => adjustTime('hour', 'up')}
+                activeOpacity={0.7}
               >
-                <X size={20} color={colors.textSecondary} />
+                <ChevronUp size={20} color={colors.primary} />
+              </TouchableOpacity>
+              <View style={styles.timePickerValue}>
+                <Text style={styles.timePickerValueText}>
+                  {startHour.toString().padStart(2, '0')}
+                </Text>
+              </View>
+              <TouchableOpacity 
+                style={styles.timePickerButton}
+                onPress={() => adjustTime('hour', 'down')}
+                activeOpacity={0.7}
+              >
+                <ChevronDown size={20} color={colors.primary} />
               </TouchableOpacity>
             </View>
 
-            <View style={styles.timePickerDisplay}>
-              <Text style={styles.timePickerDisplayText}>
-                {formatTime12Hour(currentHour, currentMinute, currentPeriod)}
-              </Text>
+            <View style={styles.timePickerSeparatorContainer}>
+              <Text style={styles.timePickerSeparator}>:</Text>
             </View>
 
-            <View style={styles.timePickerControls}>
-              {/* Hour Control */}
-              <View style={styles.timePickerColumn}>
-                <Text style={styles.timePickerColumnLabel}>Hour</Text>
-                <TouchableOpacity 
-                  style={styles.timePickerButton}
-                  onPress={() => adjustTime('hour', 'up')}
-                  activeOpacity={0.7}
-                >
-                  <ChevronUp size={20} color={colors.primary} />
-                </TouchableOpacity>
-                <View style={styles.timePickerValue}>
-                  <Text style={styles.timePickerValueText}>
-                    {currentHour.toString().padStart(2, '0')}
-                  </Text>
-                </View>
-                <TouchableOpacity 
-                  style={styles.timePickerButton}
-                  onPress={() => adjustTime('hour', 'down')}
-                  activeOpacity={0.7}
-                >
-                  <ChevronDown size={20} color={colors.primary} />
-                </TouchableOpacity>
+            {/* Minute Control */}
+            <View style={styles.timePickerColumn}>
+              <Text style={styles.timePickerColumnLabel}>Minute</Text>
+              <TouchableOpacity 
+                style={styles.timePickerButton}
+                onPress={() => adjustTime('minute', 'up')}
+                activeOpacity={0.7}
+              >
+                <ChevronUp size={20} color={colors.primary} />
+              </TouchableOpacity>
+              <View style={styles.timePickerValue}>
+                <Text style={styles.timePickerValueText}>
+                  {startMinute.toString().padStart(2, '0')}
+                </Text>
               </View>
-
-              <View style={styles.timePickerSeparatorContainer}>
-                <Text style={styles.timePickerSeparator}>:</Text>
-              </View>
-
-              {/* Minute Control */}
-              <View style={styles.timePickerColumn}>
-                <Text style={styles.timePickerColumnLabel}>Minute</Text>
-                <TouchableOpacity 
-                  style={styles.timePickerButton}
-                  onPress={() => adjustTime('minute', 'up')}
-                  activeOpacity={0.7}
-                >
-                  <ChevronUp size={20} color={colors.primary} />
-                </TouchableOpacity>
-                <View style={styles.timePickerValue}>
-                  <Text style={styles.timePickerValueText}>
-                    {currentMinute.toString().padStart(2, '0')}
-                  </Text>
-                </View>
-                <TouchableOpacity 
-                  style={styles.timePickerButton}
-                  onPress={() => adjustTime('minute', 'down')}
-                  activeOpacity={0.7}
-                >
-                  <ChevronDown size={20} color={colors.primary} />
-                </TouchableOpacity>
-              </View>
-
-              {/* Period Control */}
-              <View style={styles.timePickerColumn}>
-                <Text style={styles.timePickerColumnLabel}>Period</Text>
-                <View style={styles.timePickerPeriodContainer}>
-                  <TouchableOpacity 
-                    style={[
-                      styles.timePickerPeriodButton,
-                      currentPeriod === 'AM' && styles.timePickerPeriodButtonActive
-                    ]}
-                    onPress={() => {
-                      if (timePickerType === 'start') {
-                        setStartPeriod('AM');
-                      } else {
-                        setEndPeriod('AM');
-                      }
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[
-                      styles.timePickerPeriodText,
-                      currentPeriod === 'AM' && styles.timePickerPeriodTextActive
-                    ]}>AM</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[
-                      styles.timePickerPeriodButton,
-                      currentPeriod === 'PM' && styles.timePickerPeriodButtonActive
-                    ]}
-                    onPress={() => {
-                      if (timePickerType === 'start') {
-                        setStartPeriod('PM');
-                      } else {
-                        setEndPeriod('PM');
-                      }
-                    }}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={[
-                      styles.timePickerPeriodText,
-                      currentPeriod === 'PM' && styles.timePickerPeriodTextActive
-                    ]}>PM</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
+              <TouchableOpacity 
+                style={styles.timePickerButton}
+                onPress={() => adjustTime('minute', 'down')}
+                activeOpacity={0.7}
+              >
+                <ChevronDown size={20} color={colors.primary} />
+              </TouchableOpacity>
             </View>
 
-            <TouchableOpacity
-              style={[styles.timePickerConfirmButton, { backgroundColor: colors.primary }]}
-              onPress={() => setShowTimePickerModal(false)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.timePickerConfirmText}>Confirm</Text>
-            </TouchableOpacity>
+            {/* Period Control */}
+            <View style={styles.timePickerColumn}>
+              <Text style={styles.timePickerColumnLabel}>Period</Text>
+              <View style={styles.timePickerPeriodContainer}>
+                <TouchableOpacity 
+                  style={[
+                    styles.timePickerPeriodButton,
+                    startPeriod === 'AM' && styles.timePickerPeriodButtonActive
+                  ]}
+                  onPress={() => setStartPeriod('AM')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[
+                    styles.timePickerPeriodText,
+                    startPeriod === 'AM' && styles.timePickerPeriodTextActive
+                  ]}>AM</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[
+                    styles.timePickerPeriodButton,
+                    startPeriod === 'PM' && styles.timePickerPeriodButtonActive
+                  ]}
+                  onPress={() => setStartPeriod('PM')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={[
+                    styles.timePickerPeriodText,
+                    startPeriod === 'PM' && styles.timePickerPeriodTextActive
+                  ]}>PM</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           </View>
+
+          <TouchableOpacity
+            style={[styles.timePickerConfirmButton, { backgroundColor: colors.primary }]}
+            onPress={() => setShowTimePickerModal(false)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.timePickerConfirmText}>Confirm</Text>
+          </TouchableOpacity>
         </View>
-      </Modal>
-    );
-  };
+      </View>
+    </Modal>
+  );
 
   const styles = StyleSheet.create({
     modal: {
@@ -586,15 +536,16 @@ export default function TimeBlockModal({
       color: colors.textSecondary,
       fontWeight: '600',
     },
-    timeContainer: {
+    durationContainer: {
       gap: 20,
     },
-    timeDurationRow: {
+    startTimeRow: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 16,
+      marginBottom: 24,
     },
-    timeButton: {
+    startTimeButton: {
       flex: 1,
       backgroundColor: colors.background,
       borderWidth: 2,
@@ -603,44 +554,65 @@ export default function TimeBlockModal({
       padding: 20,
       alignItems: 'center',
     },
-    timeButtonActive: {
+    startTimeButtonActive: {
       borderColor: colors.primary,
       backgroundColor: colors.primary + '10',
     },
-    timeButtonLabel: {
+    startTimeLabel: {
       fontSize: 12,
       color: colors.textSecondary,
       fontWeight: '600',
       marginBottom: 8,
     },
-    timeButtonValue: {
+    startTimeValue: {
       fontSize: 18,
       fontWeight: '700',
       color: colors.text,
     },
-    timeSeparator: {
-      fontSize: 24,
-      fontWeight: '700',
-      color: colors.textSecondary,
-      marginTop: 20,
+    durationGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+      marginBottom: 20,
     },
-    durationCard: {
+    durationOption: {
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderRadius: 12,
+      backgroundColor: colors.background,
+      borderWidth: 2,
+      borderColor: colors.border,
+      minWidth: 80,
+      alignItems: 'center',
+    },
+    durationOptionSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    durationOptionText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    durationOptionTextSelected: {
+      color: 'white',
+    },
+    endTimeDisplay: {
       backgroundColor: colors.primary,
       paddingHorizontal: 20,
       paddingVertical: 16,
       borderRadius: 16,
       alignItems: 'center',
       alignSelf: 'center',
-      marginTop: 16,
     },
-    durationLabel: {
+    endTimeLabel: {
       fontSize: 11,
       fontWeight: '700',
       color: 'white',
       marginBottom: 4,
       letterSpacing: 1,
     },
-    durationText: {
+    endTimeText: {
       fontSize: 18,
       fontWeight: '800',
       color: 'white',
@@ -755,7 +727,7 @@ export default function TimeBlockModal({
     saveButtonText: {
       color: 'white',
     },
-    // Time Picker Modal Styles - REDESIGNED
+    // Time Picker Modal Styles
     timePickerModalOverlay: {
       flex: 1,
       backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -1009,7 +981,7 @@ export default function TimeBlockModal({
                 </View>
               </View>
 
-              {/* 3. Duration Section */}
+              {/* 3. Duration Section - REDESIGNED */}
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
@@ -1021,39 +993,52 @@ export default function TimeBlockModal({
                   </View>
                 </View>
                 
-                <View style={styles.timeContainer}>
-                  <View style={styles.timeDurationRow}>
+                <View style={styles.durationContainer}>
+                  {/* Start Time Selection */}
+                  <View style={styles.startTimeRow}>
                     <TouchableOpacity 
-                      style={styles.timeButton}
-                      onPress={() => openTimePicker('start')}
+                      style={styles.startTimeButton}
+                      onPress={() => setShowTimePickerModal(true)}
                       activeOpacity={0.7}
                     >
-                      <Text style={styles.timeButtonLabel}>Start Time</Text>
-                      <Text style={styles.timeButtonValue}>
+                      <Text style={styles.startTimeLabel}>Start Time</Text>
+                      <Text style={styles.startTimeValue}>
                         {formatTime12Hour(startHour, startMinute, startPeriod)}
                       </Text>
                     </TouchableOpacity>
-                    
-                    <Text style={styles.timeSeparator}>|</Text>
-                    
-                    <TouchableOpacity 
-                      style={styles.timeButton}
-                      onPress={() => openTimePicker('end')}
-                      activeOpacity={0.7}
-                    >
-                      <Text style={styles.timeButtonLabel}>End Time</Text>
-                      <Text style={styles.timeButtonValue}>
-                        {formatTime12Hour(endHour, endMinute, endPeriod)}
-                      </Text>
-                    </TouchableOpacity>
                   </View>
                   
-                  <View style={styles.durationCard}>
-                    <Text style={styles.durationLabel}>DURATION</Text>
-                    <Text style={styles.durationText}>{getDuration()}</Text>
+                  {/* Duration Selection Grid */}
+                  <View style={styles.durationGrid}>
+                    {durationOptions.map((duration) => (
+                      <TouchableOpacity
+                        key={duration}
+                        style={[
+                          styles.durationOption,
+                          selectedDuration === duration && styles.durationOptionSelected,
+                        ]}
+                        onPress={() => setSelectedDuration(duration)}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[
+                            styles.durationOptionText,
+                            selectedDuration === duration && styles.durationOptionTextSelected,
+                          ]}
+                        >
+                          {formatDuration(duration)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
                   </View>
                   
-                  {errors.time && <Text style={styles.errorText}>{errors.time}</Text>}
+                  {/* End Time Display */}
+                  <View style={styles.endTimeDisplay}>
+                    <Text style={styles.endTimeLabel}>ENDS AT</Text>
+                    <Text style={styles.endTimeText}>{calculateEndTime()}</Text>
+                  </View>
+                  
+                  {errors.duration && <Text style={styles.errorText}>{errors.duration}</Text>}
                 </View>
               </View>
 
