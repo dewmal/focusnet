@@ -146,22 +146,18 @@ export default function TodayScreen() {
     }
   };
 
+  // FIXED: Simplified button press handler
   const handleAddButtonPress = () => {
-    Alert.alert(
-      'Add Time Block',
-      'Choose how you want to add a new time block:',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Quick Block', onPress: handleAddQuickBlock },
-        { 
-          text: 'Custom Block', 
-          onPress: () => {
-            setEditingBlock(null);
-            setIsModalVisible(true);
-          }
-        },
-      ]
-    );
+    console.log('Add button pressed - opening modal');
+    setEditingBlock(null); // Clear any existing editing block
+    setIsModalVisible(true); // Open modal directly
+  };
+
+  // FIXED: Added separate handler for custom block creation
+  const handleCreateCustomBlock = () => {
+    console.log('Creating custom block');
+    setEditingBlock(null);
+    setIsModalVisible(true);
   };
 
   const handleNotificationsPress = () => {
@@ -317,6 +313,23 @@ export default function TodayScreen() {
     secondaryActionText: {
       color: colors.textSecondary,
     },
+    createBlockButton: {
+      backgroundColor: colors.secondary,
+      paddingVertical: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+      marginBottom: 12,
+      shadowColor: colors.secondary,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    createBlockText: {
+      color: 'white',
+      fontSize: 16,
+      fontWeight: '600',
+    },
   });
 
   return (
@@ -383,6 +396,9 @@ export default function TodayScreen() {
 
           {/* Quick Actions */}
           <View style={styles.quickActions}>
+            <TouchableOpacity style={styles.createBlockButton} onPress={handleCreateCustomBlock}>
+              <Text style={styles.createBlockText}>Create New Block</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.quickActionButton} onPress={handleAddQuickBlock}>
               <Text style={styles.quickActionText}>Add Quick Block</Text>
             </TouchableOpacity>
@@ -398,10 +414,11 @@ export default function TodayScreen() {
         </View>
       </ScrollView>
 
-      {/* Time Block Modal */}
+      {/* Time Block Modal - FIXED: Proper state management */}
       <TimeBlockModal
         visible={isModalVisible}
         onClose={() => {
+          console.log('Modal closing');
           setIsModalVisible(false);
           setEditingBlock(null);
         }}
