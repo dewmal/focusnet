@@ -3,10 +3,12 @@ import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity } fr
 import { ChevronLeft, ChevronRight, ChartBar as BarChart3, ChartPie as PieChart } from 'lucide-react-native';
 import { loadTimeBlocks } from '@/utils/storage';
 import { TimeBlockData } from '@/components/TimeBlock';
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function WeeklyScreen() {
   const [blocks, setBlocks] = useState<TimeBlockData[]>([]);
   const [currentWeek, setCurrentWeek] = useState(new Date());
+  const { colors } = useTheme();
 
   useEffect(() => {
     loadData();
@@ -67,6 +69,214 @@ export default function WeeklyScreen() {
 
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    header: {
+      alignItems: 'center',
+      paddingTop: 20,
+      paddingBottom: 16,
+      paddingHorizontal: 20,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    subtitle: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      fontWeight: '500',
+      marginTop: 4,
+    },
+    weekNavigation: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+    },
+    navButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    weekRange: {
+      fontSize: 18,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    statsGrid: {
+      flexDirection: 'row',
+      paddingHorizontal: 20,
+      gap: 12,
+      marginBottom: 24,
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: colors.surface,
+      padding: 20,
+      borderRadius: 12,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    statNumber: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: colors.text,
+      marginTop: 8,
+      marginBottom: 4,
+    },
+    statLabel: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: '500',
+    },
+    calendarContainer: {
+      paddingHorizontal: 20,
+      marginBottom: 24,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 16,
+    },
+    calendarGrid: {
+      flexDirection: 'row',
+      backgroundColor: colors.surface,
+      borderRadius: 12,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    dayColumn: {
+      flex: 1,
+      alignItems: 'center',
+    },
+    dayName: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: colors.textSecondary,
+      marginBottom: 4,
+    },
+    dayNumber: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: colors.text,
+      marginBottom: 12,
+    },
+    dayBlocks: {
+      gap: 4,
+    },
+    miniBlock: {
+      width: 24,
+      height: 20,
+      borderRadius: 3,
+      overflow: 'hidden',
+    },
+    miniBlockFill: {
+      width: '100%',
+      borderRadius: 3,
+    },
+    categoryContainer: {
+      paddingHorizontal: 20,
+      marginBottom: 24,
+    },
+    categoryItem: {
+      marginBottom: 16,
+    },
+    categoryHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    categoryDot: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      marginRight: 12,
+    },
+    categoryName: {
+      flex: 1,
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    categoryHours: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    categoryBar: {
+      height: 6,
+      backgroundColor: colors.border,
+      borderRadius: 3,
+      overflow: 'hidden',
+    },
+    categoryBarFill: {
+      height: '100%',
+      borderRadius: 3,
+    },
+    insightsContainer: {
+      paddingHorizontal: 20,
+      marginBottom: 24,
+    },
+    insightCard: {
+      backgroundColor: colors.surface,
+      padding: 16,
+      borderRadius: 8,
+      marginBottom: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    insightTitle: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.text,
+      marginBottom: 4,
+    },
+    insightText: {
+      fontSize: 13,
+      color: colors.textSecondary,
+    },
+    actionsContainer: {
+      paddingHorizontal: 20,
+      paddingBottom: 32,
+      gap: 12,
+    },
+    actionButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: 16,
+      borderRadius: 12,
+      alignItems: 'center',
+    },
+    actionButtonText: {
+      color: 'white',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    secondaryAction: {
+      backgroundColor: 'transparent',
+      borderWidth: 2,
+      borderColor: colors.border,
+    },
+    secondaryActionText: {
+      color: colors.textSecondary,
+    },
+  });
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
@@ -82,7 +292,7 @@ export default function WeeklyScreen() {
             style={styles.navButton}
             onPress={() => navigateWeek('prev')}
           >
-            <ChevronLeft size={20} color="#8B7355" />
+            <ChevronLeft size={20} color={colors.textSecondary} />
           </TouchableOpacity>
           
           <Text style={styles.weekRange}>{weekRange}</Text>
@@ -91,19 +301,19 @@ export default function WeeklyScreen() {
             style={styles.navButton}
             onPress={() => navigateWeek('next')}
           >
-            <ChevronRight size={20} color="#8B7355" />
+            <ChevronRight size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
         {/* Week Stats */}
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
-            <BarChart3 size={24} color="#FF6B35" />
+            <BarChart3 size={24} color={colors.primary} />
             <Text style={styles.statNumber}>{Math.round(stats.totalHours)}h</Text>
             <Text style={styles.statLabel}>Total Planned</Text>
           </View>
           <View style={styles.statCard}>
-            <PieChart size={24} color="#2E8B8B" />
+            <PieChart size={24} color={colors.secondary} />
             <Text style={styles.statNumber}>
               {Math.round((stats.completedBlocks / stats.totalBlocks) * 100)}%
             </Text>
@@ -151,7 +361,7 @@ export default function WeeklyScreen() {
           <Text style={styles.sectionTitle}>Time by Category</Text>
           {Object.entries(stats.categoryStats).map(([category, hours]) => {
             const percentage = (hours / stats.totalHours) * 100;
-            const categoryColor = blocks.find(b => b.category === category)?.color || '#8B7355';
+            const categoryColor = blocks.find(b => b.category === category)?.color || colors.textSecondary;
             
             return (
               <View key={category} style={styles.categoryItem}>
@@ -208,211 +418,3 @@ export default function WeeklyScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F1E8',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  header: {
-    alignItems: 'center',
-    paddingTop: 20,
-    paddingBottom: 16,
-    paddingHorizontal: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#2A1810',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#8B7355',
-    fontWeight: '500',
-    marginTop: 4,
-  },
-  weekNavigation: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  navButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#FFF8E7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: '#E8DCC0',
-  },
-  weekRange: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#2A1810',
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    gap: 12,
-    marginBottom: 24,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#FFF8E7',
-    padding: 20,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E8DCC0',
-  },
-  statNumber: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: '#2A1810',
-    marginTop: 8,
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
-    color: '#8B7355',
-    fontWeight: '500',
-  },
-  calendarContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#2A1810',
-    marginBottom: 16,
-  },
-  calendarGrid: {
-    flexDirection: 'row',
-    backgroundColor: '#FFF8E7',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E8DCC0',
-  },
-  dayColumn: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  dayName: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#8B7355',
-    marginBottom: 4,
-  },
-  dayNumber: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#2A1810',
-    marginBottom: 12,
-  },
-  dayBlocks: {
-    gap: 4,
-  },
-  miniBlock: {
-    width: 24,
-    height: 20,
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  miniBlockFill: {
-    width: '100%',
-    borderRadius: 3,
-  },
-  categoryContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  categoryItem: {
-    marginBottom: 16,
-  },
-  categoryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  categoryDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 12,
-  },
-  categoryName: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2A1810',
-  },
-  categoryHours: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#8B7355',
-  },
-  categoryBar: {
-    height: 6,
-    backgroundColor: '#E8DCC0',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  categoryBarFill: {
-    height: '100%',
-    borderRadius: 3,
-  },
-  insightsContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
-  },
-  insightCard: {
-    backgroundColor: '#FFF8E7',
-    padding: 16,
-    borderRadius: 8,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#E8DCC0',
-  },
-  insightTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2A1810',
-    marginBottom: 4,
-  },
-  insightText: {
-    fontSize: 13,
-    color: '#8B7355',
-  },
-  actionsContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: 32,
-    gap: 12,
-  },
-  actionButton: {
-    backgroundColor: '#FF6B35',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  actionButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  secondaryAction: {
-    backgroundColor: 'transparent',
-    borderWidth: 2,
-    borderColor: '#E8DCC0',
-  },
-  secondaryActionText: {
-    color: '#8B7355',
-  },
-});

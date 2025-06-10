@@ -109,14 +109,64 @@ export const loadReflections = async (): Promise<DailyReflection[]> => {
   }
 };
 
-// Reset all data
+// Reset all data - FIXED VERSION
 export const resetAllData = async () => {
   try {
-    await AsyncStorage.multiRemove([BLOCKS_KEY, CATEGORIES_KEY, REFLECTIONS_KEY, SETTINGS_KEY]);
+    // Get all keys from AsyncStorage
+    const allKeys = await AsyncStorage.getAllKeys();
+    
+    // Filter keys that belong to our app
+    const appKeys = allKeys.filter(key => 
+      key === BLOCKS_KEY || 
+      key === CATEGORIES_KEY || 
+      key === REFLECTIONS_KEY || 
+      key === SETTINGS_KEY ||
+      key === 'app_theme_mode' // Include theme storage key
+    );
+    
+    // Remove all app-related data
+    if (appKeys.length > 0) {
+      await AsyncStorage.multiRemove(appKeys);
+    }
+    
     console.log('All data has been reset successfully');
+    return true;
   } catch (error) {
     console.error('Error resetting data:', error);
     throw error;
+  }
+};
+
+// Clear specific data type
+export const clearTimeBlocks = async () => {
+  try {
+    await AsyncStorage.removeItem(BLOCKS_KEY);
+  } catch (error) {
+    console.error('Error clearing time blocks:', error);
+  }
+};
+
+export const clearCategories = async () => {
+  try {
+    await AsyncStorage.removeItem(CATEGORIES_KEY);
+  } catch (error) {
+    console.error('Error clearing categories:', error);
+  }
+};
+
+export const clearReflections = async () => {
+  try {
+    await AsyncStorage.removeItem(REFLECTIONS_KEY);
+  } catch (error) {
+    console.error('Error clearing reflections:', error);
+  }
+};
+
+export const clearSettings = async () => {
+  try {
+    await AsyncStorage.removeItem(SETTINGS_KEY);
+  } catch (error) {
+    console.error('Error clearing settings:', error);
   }
 };
 

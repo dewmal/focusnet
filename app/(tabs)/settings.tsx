@@ -125,6 +125,7 @@ export default function SettingsScreen() {
               Alert.alert('Success', 'All data has been reset successfully');
             } catch (error) {
               Alert.alert('Error', 'Failed to reset data. Please try again.');
+              console.error('Reset error:', error);
             } finally {
               setIsResetting(false);
             }
