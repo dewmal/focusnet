@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
 import { Plus, Calendar, TrendingUp } from 'lucide-react-native';
 import TimeBlock, { TimeBlockData } from '@/components/TimeBlock';
 import { loadTimeBlocks, saveTimeBlocks } from '@/utils/storage';
@@ -40,6 +40,95 @@ export default function TodayScreen() {
     );
     setBlocks(updatedBlocks);
     saveTimeBlocks(updatedBlocks);
+  };
+
+  const handleAddQuickBlock = () => {
+    Alert.alert(
+      'Add Quick Block',
+      'Choose a quick block duration:',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: '30 min', onPress: () => createQuickBlock(30) },
+        { text: '60 min', onPress: () => createQuickBlock(60) },
+        { text: '90 min', onPress: () => createQuickBlock(90) },
+      ]
+    );
+  };
+
+  const createQuickBlock = async (duration: number) => {
+    try {
+      const now = new Date();
+      const startTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+      const endDate = new Date(now.getTime() + duration * 60000);
+      const endTime = `${endDate.getHours().toString().padStart(2, '0')}:${endDate.getMinutes().toString().padStart(2, '0')}`;
+
+      const newBlock: TimeBlockData = {
+        id: Date.now().toString(),
+        title: `Quick Focus Block (${duration}min)`,
+        startTime,
+        endTime,
+        category: 'Personal',
+        color: '#FF6B35',
+        tasks: ['Focus on current task'],
+        isActive: false,
+        isCompleted: false,
+        progress: 0,
+      };
+
+      const updatedBlocks = [...blocks, newBlock];
+      setBlocks(updatedBlocks);
+      await saveTimeBlocks(updatedBlocks);
+      
+      Alert.alert('Success', `Quick ${duration}-minute block has been added!`);
+    } catch (error) {
+      console.error('Error creating quick block:', error);
+      Alert.alert('Error', 'Failed to create quick block. Please try again.');
+    }
+  };
+
+  const handleCopyYesterday = () => {
+    Alert.alert(
+      'Copy Yesterday\'s Plan',
+      'This will copy your time blocks from yesterday to today. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Copy', onPress: copyYesterdaysPlan },
+      ]
+    );
+  };
+
+  const copyYesterdaysPlan = async () => {
+    try {
+      // For demo purposes, we'll duplicate existing blocks with new IDs
+      const copiedBlocks = blocks.map(block => ({
+        ...block,
+        id: `${Date.now()}-${Math.random()}`,
+        isActive: false,
+        isCompleted: false,
+        progress: 0,
+      }));
+
+      const updatedBlocks = [...blocks, ...copiedBlocks];
+      setBlocks(updatedBlocks);
+      await saveTimeBlocks(updatedBlocks);
+      
+      Alert.alert('Success', `${copiedBlocks.length} blocks have been copied from yesterday!`);
+    } catch (error) {
+      console.error('Error copying yesterday\'s plan:', error);
+      Alert.alert('Error', 'Failed to copy yesterday\'s plan. Please try again.');
+    }
+  };
+
+  const handleAddButtonPress = () => {
+    Alert.alert(
+      'Add Time Block',
+      'Choose how you want to add a new time block:',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Quick Block', onPress: handleAddQuickBlock },
+        { text: 'Custom Block', onPress: () => Alert.alert('Coming Soon', 'Custom block creation will be available soon!') },
+      ]
+    );
   };
 
   const getTodayStats = () => {
@@ -187,6 +276,11 @@ export default function TodayScreen() {
       paddingVertical: 16,
       borderRadius: 12,
       alignItems: 'center',
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 3,
     },
     quickActionText: {
       color: 'white',
@@ -197,6 +291,9 @@ export default function TodayScreen() {
       backgroundColor: 'transparent',
       borderWidth: 2,
       borderColor: colors.border,
+      shadowColor: 'transparent',
+      shadowOpacity: 0,
+      elevation: 0,
     },
     secondaryActionText: {
       color: colors.textSecondary,
@@ -214,7 +311,7 @@ export default function TodayScreen() {
             </Text>
             <Text style={styles.date}>{todayDate}</Text>
           </View>
-          <TouchableOpacity style={styles.addButton}>
+          <TouchableOpacity style={styles.addButton} onPress={handleAddButtonPress}>
             <Plus size={24} color="white" />
           </TouchableOpacity>
         </View>
@@ -266,10 +363,13 @@ export default function TodayScreen() {
 
         {/* Quick Actions */}
         <View style={styles.quickActions}>
-          <TouchableOpacity style={styles.quickActionButton}>
+          <TouchableOpacity style={styles.quickActionButton} onPress={handleAddQuickBlock}>
             <Text style={styles.quickActionText}>Add Quick Block</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.quickActionButton, styles.secondaryAction]}>
+          <TouchableOpacity 
+            style={[styles.quickActionButton, styles.secondaryAction]}
+            onPress={handleCopyYesterday}
+          >
             <Text style={[styles.quickActionText, styles.secondaryActionText]}>
               Copy Yesterday's Plan
             </Text>

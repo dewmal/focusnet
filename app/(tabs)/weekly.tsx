@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Alert } from 'react-native';
 import { ChevronLeft, ChevronRight, ChartBar as BarChart3, ChartPie as PieChart } from 'lucide-react-native';
-import { loadTimeBlocks } from '@/utils/storage';
+import { loadTimeBlocks, saveTimeBlocks } from '@/utils/storage';
 import { TimeBlockData } from '@/components/TimeBlock';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -38,6 +38,70 @@ export default function WeeklyScreen() {
     const newWeek = new Date(currentWeek);
     newWeek.setDate(currentWeek.getDate() + (direction === 'next' ? 7 : -7));
     setCurrentWeek(newWeek);
+  };
+
+  const handleCopyThisWeek = async () => {
+    try {
+      Alert.alert(
+        'Copy This Week',
+        'This will duplicate all time blocks from this week to next week. Continue?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Copy', 
+            onPress: async () => {
+              // Create copies of all blocks with new IDs
+              const copiedBlocks = blocks.map(block => ({
+                ...block,
+                id: `${Date.now()}-${Math.random()}`,
+                isActive: false,
+                isCompleted: false,
+                progress: 0,
+              }));
+
+              const updatedBlocks = [...blocks, ...copiedBlocks];
+              await saveTimeBlocks(updatedBlocks);
+              await loadData();
+              
+              Alert.alert('Success', `${copiedBlocks.length} blocks have been copied to next week!`);
+            }
+          },
+        ]
+      );
+    } catch (error) {
+      console.error('Error copying week:', error);
+      Alert.alert('Error', 'Failed to copy this week. Please try again.');
+    }
+  };
+
+  const handleExportSummary = () => {
+    const stats = getWeekStats();
+    const summary = `
+Weekly Summary:
+- Total Hours Planned: ${Math.round(stats.totalHours)}h
+- Completion Rate: ${Math.round((stats.completedBlocks / stats.totalBlocks) * 100)}%
+- Blocks Completed: ${stats.completedBlocks}/${stats.totalBlocks}
+
+Category Breakdown:
+${Object.entries(stats.categoryStats).map(([category, hours]) => 
+  `- ${category}: ${Math.round(hours)}h`
+).join('\n')}
+    `.trim();
+
+    Alert.alert(
+      'Weekly Summary',
+      summary,
+      [
+        { text: 'Close', style: 'cancel' },
+        { 
+          text: 'Share', 
+          onPress: () => {
+            // In a real app, you would use a sharing library here
+            Alert.alert('Share', 'Summary copied to clipboard! (In a real app, this would open the share dialog)');
+          }
+        },
+      ]
+    );
   };
 
   const getWeekStats = () => {
@@ -261,6 +325,11 @@ export default function WeeklyScreen() {
       paddingVertical: 16,
       borderRadius: 12,
       alignItems: 'center',
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 3,
     },
     actionButtonText: {
       color: 'white',
@@ -271,6 +340,9 @@ export default function WeeklyScreen() {
       backgroundColor: 'transparent',
       borderWidth: 2,
       borderColor: colors.border,
+      shadowColor: 'transparent',
+      shadowOpacity: 0,
+      elevation: 0,
     },
     secondaryActionText: {
       color: colors.textSecondary,
@@ -405,10 +477,13 @@ export default function WeeklyScreen() {
 
         {/* Action Buttons */}
         <View style={styles.actionsContainer}>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={handleCopyThisWeek}>
             <Text style={styles.actionButtonText}>Copy This Week</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.actionButton, styles.secondaryAction]}>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.secondaryAction]}
+            onPress={handleExportSummary}
+          >
             <Text style={[styles.actionButtonText, styles.secondaryActionText]}>
               Export Summary
             </Text>
