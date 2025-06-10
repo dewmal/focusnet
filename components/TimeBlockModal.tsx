@@ -459,6 +459,62 @@ export default function TimeBlockModal({
       marginLeft: 4,
       fontWeight: '500',
     },
+    tasksContainer: {
+      gap: 16,
+    },
+    taskRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    taskInput: {
+      flex: 1,
+      backgroundColor: '#2A2A2A',
+      borderWidth: 2,
+      borderColor: '#404040',
+      borderRadius: 16,
+      padding: 16,
+      fontSize: 14,
+      color: '#FFFFFF',
+      fontWeight: '500',
+    },
+    taskInputFocused: {
+      borderColor: colors.primary,
+    },
+    taskButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    addTaskButton: {
+      backgroundColor: colors.primary + '30',
+      borderWidth: 2,
+      borderColor: colors.primary + '60',
+    },
+    removeTaskButton: {
+      backgroundColor: colors.error + '30',
+      borderWidth: 2,
+      borderColor: colors.error + '60',
+    },
+    addTaskRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 20,
+      borderWidth: 2,
+      borderColor: '#404040',
+      borderStyle: 'dashed',
+      borderRadius: 16,
+      gap: 10,
+      backgroundColor: '#2A2A2A',
+    },
+    addTaskText: {
+      fontSize: 14,
+      color: '#B0B0B0',
+      fontWeight: '600',
+    },
     timeContainer: {
       gap: 20,
     },
@@ -628,62 +684,6 @@ export default function TimeBlockModal({
       height: 40,
       borderRadius: 20,
     },
-    tasksContainer: {
-      gap: 16,
-    },
-    taskRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 12,
-    },
-    taskInput: {
-      flex: 1,
-      backgroundColor: '#2A2A2A',
-      borderWidth: 2,
-      borderColor: '#404040',
-      borderRadius: 16,
-      padding: 16,
-      fontSize: 14,
-      color: '#FFFFFF',
-      fontWeight: '500',
-    },
-    taskInputFocused: {
-      borderColor: colors.primary,
-    },
-    taskButton: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    addTaskButton: {
-      backgroundColor: colors.primary + '30',
-      borderWidth: 2,
-      borderColor: colors.primary + '60',
-    },
-    removeTaskButton: {
-      backgroundColor: colors.error + '30',
-      borderWidth: 2,
-      borderColor: colors.error + '60',
-    },
-    addTaskRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 20,
-      borderWidth: 2,
-      borderColor: '#404040',
-      borderStyle: 'dashed',
-      borderRadius: 16,
-      gap: 10,
-      backgroundColor: '#2A2A2A',
-    },
-    addTaskText: {
-      fontSize: 14,
-      color: '#B0B0B0',
-      fontWeight: '600',
-    },
     footer: {
       flexDirection: 'row',
       padding: 24,
@@ -763,7 +763,7 @@ export default function TimeBlockModal({
           {/* Content */}
           <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
             <View style={styles.content}>
-              {/* Title Section */}
+              {/* 1. Title Section */}
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
@@ -795,45 +795,7 @@ export default function TimeBlockModal({
                 {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
               </View>
 
-              {/* Time Section */}
-              <View style={styles.section}>
-                <View style={styles.sectionHeader}>
-                  <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
-                    <Clock size={18} color={colors.primary} />
-                  </View>
-                  <View style={styles.sectionContent}>
-                    <Text style={styles.sectionTitle}>Time & Duration</Text>
-                    <Text style={styles.sectionDescription}>When will this happen?</Text>
-                  </View>
-                </View>
-                
-                <View style={styles.timeContainer}>
-                  <TimePickerComponent
-                    type="start"
-                    hour={startHour}
-                    minute={startMinute}
-                    period={startPeriod}
-                    label="Start Time"
-                  />
-                  
-                  <TimePickerComponent
-                    type="end"
-                    hour={endHour}
-                    minute={endMinute}
-                    period={endPeriod}
-                    label="End Time"
-                  />
-                  
-                  <View style={styles.durationCard}>
-                    <Text style={styles.durationLabel}>DURATION</Text>
-                    <Text style={styles.durationText}>{getDuration()}</Text>
-                  </View>
-                  
-                  {errors.time && <Text style={styles.errorText}>{errors.time}</Text>}
-                </View>
-              </View>
-
-              {/* Tasks Section - Moved after title */}
+              {/* 2. Tasks Section */}
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
@@ -875,7 +837,45 @@ export default function TimeBlockModal({
                 </View>
               </View>
 
-              {/* Category Section */}
+              {/* 3. Duration Section */}
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
+                    <Clock size={18} color={colors.primary} />
+                  </View>
+                  <View style={styles.sectionContent}>
+                    <Text style={styles.sectionTitle}>Time & Duration</Text>
+                    <Text style={styles.sectionDescription}>When will this happen?</Text>
+                  </View>
+                </View>
+                
+                <View style={styles.timeContainer}>
+                  <TimePickerComponent
+                    type="start"
+                    hour={startHour}
+                    minute={startMinute}
+                    period={startPeriod}
+                    label="Start Time"
+                  />
+                  
+                  <TimePickerComponent
+                    type="end"
+                    hour={endHour}
+                    minute={endMinute}
+                    period={endPeriod}
+                    label="End Time"
+                  />
+                  
+                  <View style={styles.durationCard}>
+                    <Text style={styles.durationLabel}>DURATION</Text>
+                    <Text style={styles.durationText}>{getDuration()}</Text>
+                  </View>
+                  
+                  {errors.time && <Text style={styles.errorText}>{errors.time}</Text>}
+                </View>
+              </View>
+
+              {/* 4. Category Section */}
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
@@ -919,26 +919,34 @@ export default function TimeBlockModal({
                   ))}
                 </View>
                 {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
+              </View>
 
-                {/* Color Customization */}
-                <View style={styles.colorsSection}>
-                  <Text style={styles.sectionTitle}>Custom Color</Text>
-                  <View style={styles.colorsGrid}>
-                    {predefinedColors.map((color) => (
-                      <TouchableOpacity
-                        key={color}
-                        style={[
-                          styles.colorOption,
-                          customColor === color && styles.colorOptionSelected,
-                        ]}
-                        onPress={() => setCustomColor(color)}
-                      >
-                        <View
-                          style={[styles.colorPreview, { backgroundColor: color }]}
-                        />
-                      </TouchableOpacity>
-                    ))}
+              {/* 5. Color Section */}
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
+                    <Target size={18} color={colors.primary} />
                   </View>
+                  <View style={styles.sectionContent}>
+                    <Text style={styles.sectionTitle}>Custom Color</Text>
+                    <Text style={styles.sectionDescription}>Choose a color for this block</Text>
+                  </View>
+                </View>
+                <View style={styles.colorsGrid}>
+                  {predefinedColors.map((color) => (
+                    <TouchableOpacity
+                      key={color}
+                      style={[
+                        styles.colorOption,
+                        customColor === color && styles.colorOptionSelected,
+                      ]}
+                      onPress={() => setCustomColor(color)}
+                    >
+                      <View
+                        style={[styles.colorPreview, { backgroundColor: color }]}
+                      />
+                    </TouchableOpacity>
+                  ))}
                 </View>
               </View>
             </View>
