@@ -362,7 +362,7 @@ export default function FocusScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Mobile Header */}
+      {/* Action Bar Header */}
       <MobileHeader
         title="Focus Mode"
         subtitle="Deep work starts here"

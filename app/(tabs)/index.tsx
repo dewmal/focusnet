@@ -146,14 +146,12 @@ export default function TodayScreen() {
     }
   };
 
-  // FIXED: Simplified button press handler
   const handleAddButtonPress = () => {
     console.log('Add button pressed - opening modal');
-    setEditingBlock(null); // Clear any existing editing block
-    setIsModalVisible(true); // Open modal directly
+    setEditingBlock(null);
+    setIsModalVisible(true);
   };
 
-  // FIXED: Added separate handler for custom block creation
   const handleCreateCustomBlock = () => {
     console.log('Creating custom block');
     setEditingBlock(null);
@@ -191,6 +189,12 @@ export default function TodayScreen() {
     day: 'numeric' 
   });
 
+  const getGreeting = () => {
+    if (currentHour < 12) return 'Good Morning';
+    if (currentHour < 17) return 'Good Afternoon';
+    return 'Good Evening';
+  };
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -205,9 +209,9 @@ export default function TodayScreen() {
     },
     addButton: {
       backgroundColor: colors.primary,
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       alignItems: 'center',
       justifyContent: 'center',
       shadowColor: colors.primary,
@@ -334,15 +338,15 @@ export default function TodayScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Mobile Header */}
+      {/* Action Bar Header */}
       <MobileHeader
-        title={`Good ${currentHour < 12 ? 'Morning' : currentHour < 17 ? 'Afternoon' : 'Evening'}`}
+        title={getGreeting()}
         subtitle={todayDate}
         showNotifications={true}
         onNotificationsPress={handleNotificationsPress}
         rightComponent={
           <TouchableOpacity style={styles.addButton} onPress={handleAddButtonPress}>
-            <Plus size={24} color="white" />
+            <Plus size={20} color="white" />
           </TouchableOpacity>
         }
       />
@@ -414,7 +418,7 @@ export default function TodayScreen() {
         </View>
       </ScrollView>
 
-      {/* Time Block Modal - FIXED: Proper state management */}
+      {/* Time Block Modal */}
       <TimeBlockModal
         visible={isModalVisible}
         onClose={() => {

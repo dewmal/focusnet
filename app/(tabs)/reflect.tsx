@@ -327,7 +327,7 @@ export default function ReflectScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Mobile Header */}
+      {/* Action Bar Header */}
       <MobileHeader
         title="Daily Reflection"
         subtitle="Learn and improve from today"

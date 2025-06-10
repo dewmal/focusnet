@@ -334,7 +334,7 @@ ${Object.entries(stats.categoryStats).map(([category, hours]) =>
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Mobile Header */}
+      {/* Action Bar Header */}
       <MobileHeader
         title="Weekly Overview"
         subtitle="Track your progress"

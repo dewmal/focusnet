@@ -369,7 +369,7 @@ export default function SettingsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Mobile Header */}
+      {/* Action Bar Header */}
       <MobileHeader
         title="Settings"
         subtitle="Customize your FocusNest"

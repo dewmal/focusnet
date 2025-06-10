@@ -4,7 +4,7 @@ import { Bell, Settings, User, Menu } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 
 interface MobileHeaderProps {
-  title: string;
+  title?: string;
   subtitle?: string;
   showNotifications?: boolean;
   showSettings?: boolean;
@@ -15,12 +15,15 @@ interface MobileHeaderProps {
   onProfilePress?: () => void;
   onMenuPress?: () => void;
   rightComponent?: React.ReactNode;
+  leftComponent?: React.ReactNode;
+  backgroundColor?: string;
+  minimal?: boolean;
 }
 
 export default function MobileHeader({
   title,
   subtitle,
-  showNotifications = true,
+  showNotifications = false,
   showSettings = false,
   showProfile = false,
   showMenu = false,
@@ -29,49 +32,46 @@ export default function MobileHeader({
   onProfilePress,
   onMenuPress,
   rightComponent,
+  leftComponent,
+  backgroundColor,
+  minimal = false,
 }: MobileHeaderProps) {
   const { colors } = useTheme();
 
-  const getCurrentGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good Morning';
-    if (hour < 17) return 'Good Afternoon';
-    return 'Good Evening';
-  };
-
   const styles = StyleSheet.create({
     container: {
-      backgroundColor: colors.surface,
+      backgroundColor: backgroundColor || colors.background,
       paddingTop: Platform.OS === 'ios' ? 50 : 20,
-      paddingBottom: 16,
+      paddingBottom: minimal ? 8 : 16,
       paddingHorizontal: 20,
-      borderBottomWidth: 1,
+      borderBottomWidth: minimal ? 0 : 1,
       borderBottomColor: colors.border,
-      shadowColor: '#000',
+      shadowColor: minimal ? 'transparent' : '#000',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.05,
-      shadowRadius: 8,
-      elevation: 3,
+      shadowOpacity: minimal ? 0 : 0.05,
+      shadowRadius: minimal ? 0 : 8,
+      elevation: minimal ? 0 : 3,
     },
     headerRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
+      minHeight: 44,
     },
     leftSection: {
       flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
     },
-    greeting: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      fontWeight: '500',
-      marginBottom: 2,
+    titleContainer: {
+      flex: 1,
+      marginLeft: leftComponent ? 12 : 0,
     },
     title: {
-      fontSize: 24,
+      fontSize: 20,
       fontWeight: '700',
       color: colors.text,
-      marginBottom: 2,
+      marginBottom: subtitle ? 2 : 0,
     },
     subtitle: {
       fontSize: 13,
@@ -84,10 +84,10 @@ export default function MobileHeader({
       gap: 8,
     },
     actionButton: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
-      backgroundColor: colors.background,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.surface,
       alignItems: 'center',
       justifyContent: 'center',
       borderWidth: 1,
@@ -112,8 +112,8 @@ export default function MobileHeader({
     },
     notificationDot: {
       position: 'absolute',
-      top: 8,
-      right: 8,
+      top: 6,
+      right: 6,
       width: 8,
       height: 8,
       borderRadius: 4,
@@ -125,15 +125,14 @@ export default function MobileHeader({
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <View style={styles.leftSection}>
-          {title.includes('Good') ? (
-            <>
-              <Text style={styles.greeting}>{getCurrentGreeting()}</Text>
-              <Text style={styles.title}>Welcome back!</Text>
-            </>
-          ) : (
-            <Text style={styles.title}>{title}</Text>
+          {leftComponent}
+          
+          {(title || subtitle) && (
+            <View style={styles.titleContainer}>
+              {title && <Text style={styles.title}>{title}</Text>}
+              {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+            </View>
           )}
-          {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         </View>
 
         <View style={styles.rightSection}>
@@ -144,7 +143,7 @@ export default function MobileHeader({
               style={[styles.actionButton, styles.menuButton]}
               onPress={onMenuPress}
             >
-              <Menu size={20} color={colors.accent} />
+              <Menu size={18} color={colors.accent} />
             </TouchableOpacity>
           )}
 
@@ -153,7 +152,7 @@ export default function MobileHeader({
               style={[styles.actionButton, styles.notificationButton]}
               onPress={onNotificationsPress}
             >
-              <Bell size={20} color={colors.primary} />
+              <Bell size={18} color={colors.primary} />
               <View style={styles.notificationDot} />
             </TouchableOpacity>
           )}
@@ -163,7 +162,7 @@ export default function MobileHeader({
               style={[styles.actionButton, styles.profileButton]}
               onPress={onProfilePress}
             >
-              <User size={20} color={colors.secondary} />
+              <User size={18} color={colors.secondary} />
             </TouchableOpacity>
           )}
 
@@ -172,7 +171,7 @@ export default function MobileHeader({
               style={styles.actionButton}
               onPress={onSettingsPress}
             >
-              <Settings size={20} color={colors.textSecondary} />
+              <Settings size={18} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
