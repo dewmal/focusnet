@@ -12,7 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { X, Clock, Tag, Plus, Trash2, Save, Target, Calendar, CheckSquare, Square } from 'lucide-react-native';
+import { X, Clock, Tag, Plus, Trash2, Save, Target, Calendar, SquareCheck as CheckSquare, Square } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { loadCategories, BlockCategory } from '@/utils/storage';
 import { TimeBlockData } from './TimeBlock';
