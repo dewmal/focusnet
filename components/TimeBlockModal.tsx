@@ -12,7 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { X, Clock, Tag, Plus, Trash2, Save, Target, Calendar, SquareCheck as CheckSquare, Square } from 'lucide-react-native';
+import { X, Clock, Tag, Plus, Trash2, Save, Target, Calendar, SquareCheck as CheckSquare, Square, AlertCircle } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { loadCategories, BlockCategory } from '@/utils/storage';
 import { TimeBlockData } from './TimeBlock';
@@ -119,10 +119,42 @@ export default function TimeBlockModal({
   const handleTimeChange = (type: 'start' | 'end', value: string) => {
     if (type === 'start') {
       setStartTime(value);
+      // Clear time validation errors when user changes time
+      if (errors.time) {
+        const newErrors = { ...errors };
+        delete newErrors.time;
+        setErrors(newErrors);
+      }
     } else {
       setEndTime(value);
+      // Clear time validation errors when user changes time
+      if (errors.time) {
+        const newErrors = { ...errors };
+        delete newErrors.time;
+        setErrors(newErrors);
+      }
     }
     setActiveTimeInput(null);
+  };
+
+  const validateTimeRange = () => {
+    const start = new Date(`2000-01-01 ${startTime}`);
+    const end = new Date(`2000-01-01 ${endTime}`);
+    
+    if (end <= start) {
+      return 'End time must be after start time';
+    }
+
+    const duration = (end.getTime() - start.getTime()) / (1000 * 60);
+    if (duration < 15) {
+      return 'Time block must be at least 15 minutes long';
+    }
+
+    if (duration > 480) { // 8 hours
+      return 'Time block cannot exceed 8 hours';
+    }
+
+    return null;
   };
 
   const validateForm = () => {
@@ -136,16 +168,9 @@ export default function TimeBlockModal({
       newErrors.category = 'Please select a category';
     }
 
-    const start = new Date(`2000-01-01 ${startTime}`);
-    const end = new Date(`2000-01-01 ${endTime}`);
-    
-    if (end <= start) {
-      newErrors.time = 'End time must be after start time';
-    }
-
-    const duration = (end.getTime() - start.getTime()) / (1000 * 60);
-    if (duration < 15) {
-      newErrors.time = 'Time block must be at least 15 minutes long';
+    const timeError = validateTimeRange();
+    if (timeError) {
+      newErrors.time = timeError;
     }
 
     setErrors(newErrors);
@@ -190,6 +215,8 @@ export default function TimeBlockModal({
     const end = new Date(`2000-01-01 ${endTime}`);
     const minutes = (end.getTime() - start.getTime()) / (1000 * 60);
     
+    if (minutes <= 0) return '0m';
+    
     if (minutes < 60) {
       return `${minutes}m`;
     } else {
@@ -209,7 +236,7 @@ export default function TimeBlockModal({
   const generateTimeOptions = () => {
     const times = [];
     for (let hour = 0; hour < 24; hour++) {
-      for (let minute = 0; minute < 60; minute += 30) {
+      for (let minute = 0; minute < 60; minute += 15) { // 15-minute intervals
         const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         times.push(timeString);
       }
@@ -218,6 +245,10 @@ export default function TimeBlockModal({
   };
 
   const timeOptions = generateTimeOptions();
+
+  // Check if current time selection is valid
+  const timeError = validateTimeRange();
+  const isTimeValid = !timeError;
 
   const styles = StyleSheet.create({
     modal: {
@@ -281,14 +312,16 @@ export default function TimeBlockModal({
     section: {
       marginBottom: 24,
     },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+      gap: 8,
+    },
     sectionTitle: {
       fontSize: 16,
       fontWeight: '700',
       color: colors.text,
-      marginBottom: 12,
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: 8,
     },
     titleInput: {
       backgroundColor: colors.background,
@@ -312,11 +345,44 @@ export default function TimeBlockModal({
       marginTop: 8,
       marginLeft: 4,
       fontWeight: '500',
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    timeContainer: {
+      backgroundColor: colors.background,
+      borderRadius: 16,
+      padding: 20,
+      borderWidth: 2,
+      borderColor: errors.time ? colors.error : (isTimeValid ? colors.success + '50' : colors.border),
+    },
+    timeHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    timeHeaderTitle: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+    },
+    durationBadge: {
+      backgroundColor: isTimeValid ? colors.primary : colors.error,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 12,
+    },
+    durationText: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: 'white',
     },
     timeRow: {
       flexDirection: 'row',
-      gap: 12,
-      marginBottom: 16,
+      gap: 16,
     },
     timeInputContainer: {
       flex: 1,
@@ -327,23 +393,28 @@ export default function TimeBlockModal({
       color: colors.textSecondary,
       marginBottom: 8,
       textTransform: 'uppercase',
-      letterSpacing: 1,
+      letterSpacing: 0.5,
     },
     timeButton: {
-      backgroundColor: colors.background,
+      backgroundColor: colors.surface,
       borderWidth: 2,
       borderColor: colors.border,
       borderRadius: 12,
       padding: 16,
       alignItems: 'center',
-      minHeight: 60,
+      minHeight: 70,
+      justifyContent: 'center',
     },
     timeButtonActive: {
       borderColor: colors.primary,
       backgroundColor: colors.primary + '10',
     },
+    timeButtonError: {
+      borderColor: colors.error,
+      backgroundColor: colors.error + '10',
+    },
     timeText: {
-      fontSize: 18,
+      fontSize: 20,
       fontWeight: '700',
       color: colors.text,
       marginBottom: 2,
@@ -352,19 +423,21 @@ export default function TimeBlockModal({
       fontSize: 12,
       color: colors.textSecondary,
       fontWeight: '600',
+      letterSpacing: 1,
     },
-    durationCard: {
-      backgroundColor: colors.primary,
-      paddingHorizontal: 20,
-      paddingVertical: 12,
-      borderRadius: 20,
-      alignItems: 'center',
-      alignSelf: 'center',
+    timeValidationContainer: {
+      marginTop: 12,
+      padding: 12,
+      backgroundColor: errors.time ? colors.error + '10' : colors.success + '10',
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: errors.time ? colors.error + '30' : colors.success + '30',
     },
-    durationText: {
-      fontSize: 16,
-      fontWeight: '700',
-      color: 'white',
+    timeValidationText: {
+      fontSize: 12,
+      color: errors.time ? colors.error : colors.success,
+      fontWeight: '600',
+      textAlign: 'center',
     },
     timePickerModal: {
       flex: 1,
@@ -379,12 +452,19 @@ export default function TimeBlockModal({
       width: '80%',
       maxHeight: 400,
     },
+    timePickerHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 16,
+    },
     timePickerTitle: {
       fontSize: 18,
       fontWeight: '700',
       color: colors.text,
-      marginBottom: 16,
-      textAlign: 'center',
+    },
+    timePickerClose: {
+      padding: 4,
     },
     timeOption: {
       paddingVertical: 12,
@@ -590,7 +670,7 @@ export default function TimeBlockModal({
             <View style={styles.content}>
               {/* Title Section */}
               <View style={styles.section}>
-                <View style={styles.sectionTitle}>
+                <View style={styles.sectionHeader}>
                   <Target size={16} color={colors.primary} />
                   <Text style={styles.sectionTitle}>Block Title</Text>
                 </View>
@@ -612,12 +692,17 @@ export default function TimeBlockModal({
                   placeholderTextColor={colors.textSecondary}
                   maxLength={50}
                 />
-                {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
+                {errors.title && (
+                  <View style={styles.errorText}>
+                    <AlertCircle size={12} color={colors.error} />
+                    <Text style={[styles.errorText, { marginTop: 0, marginLeft: 0 }]}>{errors.title}</Text>
+                  </View>
+                )}
               </View>
 
-              {/* Tasks Section - NOW AFTER TITLE */}
+              {/* Tasks Section */}
               <View style={styles.tasksSection}>
-                <View style={styles.sectionTitle}>
+                <View style={styles.sectionHeader}>
                   <CheckSquare size={16} color={colors.primary} />
                   <Text style={styles.sectionTitle}>Tasks</Text>
                 </View>
@@ -672,61 +757,73 @@ export default function TimeBlockModal({
                 </View>
               </View>
 
-              {/* Time Section - WITH DURATION DISPLAY */}
+              {/* Enhanced Time & Duration Section */}
               <View style={styles.section}>
-                <View style={styles.sectionTitle}>
+                <View style={styles.sectionHeader}>
                   <Clock size={16} color={colors.primary} />
                   <Text style={styles.sectionTitle}>Time & Duration</Text>
                 </View>
                 
-                <View style={styles.timeRow}>
-                  <View style={styles.timeInputContainer}>
-                    <Text style={styles.timeLabel}>Start Time</Text>
-                    <TouchableOpacity 
-                      style={[
-                        styles.timeButton,
-                        activeTimeInput === 'start' && styles.timeButtonActive
-                      ]}
-                      onPress={() => setActiveTimeInput('start')}
-                    >
-                      <Text style={styles.timeText}>
-                        {formatTime12Hour(startTime).split(' ')[0]}
-                      </Text>
-                      <Text style={styles.timePeriod}>
-                        {formatTime12Hour(startTime).split(' ')[1]}
-                      </Text>
-                    </TouchableOpacity>
+                <View style={styles.timeContainer}>
+                  <View style={styles.timeHeader}>
+                    <Text style={styles.timeHeaderTitle}>Schedule</Text>
+                    <View style={styles.durationBadge}>
+                      <Text style={styles.durationText}>{getDuration()}</Text>
+                    </View>
                   </View>
                   
-                  <View style={styles.timeInputContainer}>
-                    <Text style={styles.timeLabel}>End Time</Text>
-                    <TouchableOpacity 
-                      style={[
-                        styles.timeButton,
-                        activeTimeInput === 'end' && styles.timeButtonActive
-                      ]}
-                      onPress={() => setActiveTimeInput('end')}
-                    >
-                      <Text style={styles.timeText}>
-                        {formatTime12Hour(endTime).split(' ')[0]}
-                      </Text>
-                      <Text style={styles.timePeriod}>
-                        {formatTime12Hour(endTime).split(' ')[1]}
-                      </Text>
-                    </TouchableOpacity>
+                  <View style={styles.timeRow}>
+                    <View style={styles.timeInputContainer}>
+                      <Text style={styles.timeLabel}>Start Time</Text>
+                      <TouchableOpacity 
+                        style={[
+                          styles.timeButton,
+                          activeTimeInput === 'start' && styles.timeButtonActive,
+                          errors.time && styles.timeButtonError
+                        ]}
+                        onPress={() => setActiveTimeInput('start')}
+                      >
+                        <Text style={styles.timeText}>
+                          {formatTime12Hour(startTime).split(' ')[0]}
+                        </Text>
+                        <Text style={styles.timePeriod}>
+                          {formatTime12Hour(startTime).split(' ')[1]}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                    
+                    <View style={styles.timeInputContainer}>
+                      <Text style={styles.timeLabel}>End Time</Text>
+                      <TouchableOpacity 
+                        style={[
+                          styles.timeButton,
+                          activeTimeInput === 'end' && styles.timeButtonActive,
+                          errors.time && styles.timeButtonError
+                        ]}
+                        onPress={() => setActiveTimeInput('end')}
+                      >
+                        <Text style={styles.timeText}>
+                          {formatTime12Hour(endTime).split(' ')[0]}
+                        </Text>
+                        <Text style={styles.timePeriod}>
+                          {formatTime12Hour(endTime).split(' ')[1]}
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                  
+                  {/* Time Validation Feedback */}
+                  <View style={styles.timeValidationContainer}>
+                    <Text style={styles.timeValidationText}>
+                      {errors.time || (isTimeValid ? `✓ Valid ${getDuration()} time block` : 'Select your time range')}
+                    </Text>
                   </View>
                 </View>
-                
-                <View style={styles.durationCard}>
-                  <Text style={styles.durationText}>{getDuration()}</Text>
-                </View>
-                
-                {errors.time && <Text style={styles.errorText}>{errors.time}</Text>}
               </View>
 
               {/* Category Section */}
               <View style={styles.section}>
-                <View style={styles.sectionTitle}>
+                <View style={styles.sectionHeader}>
                   <Tag size={16} color={colors.primary} />
                   <Text style={styles.sectionTitle}>Category</Text>
                 </View>
@@ -762,7 +859,12 @@ export default function TimeBlockModal({
                     </TouchableOpacity>
                   ))}
                 </View>
-                {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
+                {errors.category && (
+                  <View style={styles.errorText}>
+                    <AlertCircle size={12} color={colors.error} />
+                    <Text style={[styles.errorText, { marginTop: 0, marginLeft: 0 }]}>{errors.category}</Text>
+                  </View>
+                )}
 
                 {/* Color Options */}
                 <View style={styles.colorsGrid}>
@@ -807,19 +909,27 @@ export default function TimeBlockModal({
           </View>
         </View>
 
-        {/* Time Picker Modal */}
+        {/* Enhanced Time Picker Modal */}
         {activeTimeInput && (
           <Modal
             visible={true}
             transparent
-            animationType="fade"
+            animationType="slide"
             onRequestClose={() => setActiveTimeInput(null)}
           >
             <View style={styles.timePickerModal}>
               <View style={styles.timePickerContent}>
-                <Text style={styles.timePickerTitle}>
-                  Select {activeTimeInput === 'start' ? 'Start' : 'End'} Time
-                </Text>
+                <View style={styles.timePickerHeader}>
+                  <Text style={styles.timePickerTitle}>
+                    Select {activeTimeInput === 'start' ? 'Start' : 'End'} Time
+                  </Text>
+                  <TouchableOpacity
+                    style={styles.timePickerClose}
+                    onPress={() => setActiveTimeInput(null)}
+                  >
+                    <X size={20} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                </View>
                 <ScrollView showsVerticalScrollIndicator={false}>
                   {timeOptions.map((time) => (
                     <TouchableOpacity
