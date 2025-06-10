@@ -1,27 +1,51 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Switch, TextInput, Alert } from 'react-native';
-import { Palette, Bell, User, Moon, Sun, Plus, Trash2, CreditCard as Edit } from 'lucide-react-native';
-import { loadCategories, saveCategories, BlockCategory } from '@/utils/storage';
+import { Palette, Bell, User, Moon, Sun, Plus, Trash2, Edit } from 'lucide-react-native';
+import { loadCategories, saveCategories, BlockCategory, loadSettings, saveSettings, AppSettings, resetAllData } from '@/utils/storage';
+import { useTheme } from '@/contexts/ThemeContext';
+import ClockTimePicker from '@/components/ClockTimePicker';
 
 export default function SettingsScreen() {
   const [categories, setCategories] = useState<BlockCategory[]>([]);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [workingHours, setWorkingHours] = useState({ start: '09:00', end: '17:00' });
-  const [defaultDuration, setDefaultDuration] = useState(60);
+  const [settings, setSettings] = useState<AppSettings>({
+    isDarkMode: false,
+    notificationsEnabled: true,
+    workingHours: { start: '09:00', end: '17:00' },
+    defaultDuration: 60,
+  });
   const [editingCategory, setEditingCategory] = useState<BlockCategory | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
+
+  const { isDarkMode, toggleDarkMode, colors } = useTheme();
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
-    const savedCategories = await loadCategories();
+    const [savedCategories, savedSettings] = await Promise.all([
+      loadCategories(),
+      loadSettings()
+    ]);
     setCategories(savedCategories);
+    setSettings(savedSettings);
   };
 
-  const handleAddCategory = () => {
+  const handleSettingChange = async (key: keyof AppSettings, value: any) => {
+    const updatedSettings = { ...settings, [key]: value };
+    setSettings(updatedSettings);
+    await saveSettings(updatedSettings);
+  };
+
+  const handleWorkingHoursChange = async (type: 'start' | 'end', time: string) => {
+    const updatedWorkingHours = { ...settings.workingHours, [type]: time };
+    const updatedSettings = { ...settings, workingHours: updatedWorkingHours };
+    setSettings(updatedSettings);
+    await saveSettings(updatedSettings);
+  };
+
+  const handleAddCategory = async () => {
     if (!newCategoryName.trim()) {
       Alert.alert('Error', 'Please enter a category name');
       return;
@@ -40,7 +64,7 @@ export default function SettingsScreen() {
 
     const updatedCategories = [...categories, newCategory];
     setCategories(updatedCategories);
-    saveCategories(updatedCategories);
+    await saveCategories(updatedCategories);
     setNewCategoryName('');
   };
 
@@ -53,10 +77,10 @@ export default function SettingsScreen() {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
+          onPress: async () => {
             const updatedCategories = categories.filter(c => c.id !== categoryId);
             setCategories(updatedCategories);
-            saveCategories(updatedCategories);
+            await saveCategories(updatedCategories);
           }
         }
       ]
@@ -68,7 +92,7 @@ export default function SettingsScreen() {
     setNewCategoryName(category.name);
   };
 
-  const handleSaveEdit = () => {
+  const handleSaveEdit = async () => {
     if (!editingCategory || !newCategoryName.trim()) return;
 
     const updatedCategories = categories.map(c =>
@@ -78,12 +102,227 @@ export default function SettingsScreen() {
     );
     
     setCategories(updatedCategories);
-    saveCategories(updatedCategories);
+    await saveCategories(updatedCategories);
     setEditingCategory(null);
     setNewCategoryName('');
   };
 
+  const handleResetAllData = () => {
+    Alert.alert(
+      'Reset All Data',
+      'This will permanently delete all your time blocks, reflections, categories, and settings. This action cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset Everything',
+          style: 'destructive',
+          onPress: async () => {
+            setIsResetting(true);
+            try {
+              await resetAllData();
+              // Reload default data
+              await loadData();
+              Alert.alert('Success', 'All data has been reset successfully');
+            } catch (error) {
+              Alert.alert('Error', 'Failed to reset data. Please try again.');
+            } finally {
+              setIsResetting(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const durations = [30, 45, 60, 90, 120];
+
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    scrollView: {
+      flex: 1,
+    },
+    header: {
+      alignItems: 'center',
+      paddingTop: 20,
+      paddingBottom: 16,
+      paddingHorizontal: 20,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    subtitle: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      fontWeight: '500',
+      marginTop: 4,
+    },
+    section: {
+      backgroundColor: colors.surface,
+      marginHorizontal: 20,
+      marginBottom: 16,
+      borderRadius: 12,
+      padding: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    sectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+      gap: 8,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
+    },
+    settingItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    settingLabel: {
+      fontSize: 16,
+      color: colors.text,
+      fontWeight: '500',
+    },
+    settingDescription: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 4,
+    },
+    durationContainer: {
+      flexDirection: 'row',
+      gap: 8,
+      marginTop: 12,
+    },
+    durationButton: {
+      flex: 1,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 8,
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: 'center',
+    },
+    selectedDuration: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    durationText: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: colors.textSecondary,
+    },
+    selectedDurationText: {
+      color: 'white',
+    },
+    addCategoryContainer: {
+      flexDirection: 'row',
+      gap: 12,
+      marginBottom: 16,
+    },
+    categoryInput: {
+      flex: 1,
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      padding: 12,
+      fontSize: 14,
+      color: colors.text,
+    },
+    addCategoryButton: {
+      backgroundColor: colors.accent,
+      width: 44,
+      height: 44,
+      borderRadius: 8,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    addCategoryButtonDisabled: {
+      backgroundColor: colors.textSecondary,
+      opacity: 0.5,
+    },
+    cancelEditButton: {
+      alignItems: 'center',
+      marginBottom: 16,
+    },
+    cancelEditText: {
+      color: colors.error,
+      fontSize: 14,
+      fontWeight: '500',
+    },
+    categoriesList: {
+      gap: 8,
+    },
+    categoryItem: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: 8,
+    },
+    categoryInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 12,
+    },
+    categoryColor: {
+      width: 16,
+      height: 16,
+      borderRadius: 8,
+    },
+    categoryName: {
+      fontSize: 16,
+      color: colors.text,
+      fontWeight: '500',
+    },
+    categoryActions: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    categoryActionButton: {
+      padding: 4,
+    },
+    appVersion: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      fontWeight: '600',
+      marginBottom: 8,
+    },
+    appDescription: {
+      fontSize: 14,
+      color: colors.textSecondary,
+      lineHeight: 20,
+    },
+    dangerButton: {
+      backgroundColor: colors.error,
+      paddingVertical: 12,
+      borderRadius: 8,
+      alignItems: 'center',
+      marginBottom: 8,
+      opacity: isResetting ? 0.6 : 1,
+    },
+    dangerButtonText: {
+      color: 'white',
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    dangerDescription: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      textAlign: 'center',
+    },
+  });
+
+  const isAddButtonDisabled = !newCategoryName.trim();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -97,7 +336,7 @@ export default function SettingsScreen() {
         {/* Appearance */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            {isDarkMode ? <Moon size={20} color="#FF6B35" /> : <Sun size={20} color="#FF6B35" />}
+            {isDarkMode ? <Moon size={20} color={colors.primary} /> : <Sun size={20} color={colors.primary} />}
             <Text style={styles.sectionTitle}>Appearance</Text>
           </View>
           
@@ -105,8 +344,8 @@ export default function SettingsScreen() {
             <Text style={styles.settingLabel}>Dark Mode</Text>
             <Switch
               value={isDarkMode}
-              onValueChange={setIsDarkMode}
-              trackColor={{ false: '#E8DCC0', true: '#FF6B35' }}
+              onValueChange={toggleDarkMode}
+              trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor={isDarkMode ? '#FFF' : '#FFF'}
             />
           </View>
@@ -115,17 +354,17 @@ export default function SettingsScreen() {
         {/* Notifications */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Bell size={20} color="#2E8B8B" />
+            <Bell size={20} color={colors.secondary} />
             <Text style={styles.sectionTitle}>Notifications</Text>
           </View>
           
           <View style={styles.settingItem}>
             <Text style={styles.settingLabel}>Enable Notifications</Text>
             <Switch
-              value={notificationsEnabled}
-              onValueChange={setNotificationsEnabled}
-              trackColor={{ false: '#E8DCC0', true: '#2E8B8B' }}
-              thumbColor={notificationsEnabled ? '#FFF' : '#FFF'}
+              value={settings.notificationsEnabled}
+              onValueChange={(value) => handleSettingChange('notificationsEnabled', value)}
+              trackColor={{ false: colors.border, true: colors.secondary }}
+              thumbColor={settings.notificationsEnabled ? '#FFF' : '#FFF'}
             />
           </View>
           
@@ -137,31 +376,21 @@ export default function SettingsScreen() {
         {/* Working Hours */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <User size={20} color="#8B4F9F" />
+            <User size={20} color={colors.accent} />
             <Text style={styles.sectionTitle}>Working Hours</Text>
           </View>
           
-          <View style={styles.timeInputContainer}>
-            <View style={styles.timeInputGroup}>
-              <Text style={styles.timeLabel}>Start</Text>
-              <TextInput
-                style={styles.timeInput}
-                value={workingHours.start}
-                onChangeText={(text) => setWorkingHours({ ...workingHours, start: text })}
-                placeholder="09:00"
-              />
-            </View>
-            <Text style={styles.timeSeparator}>to</Text>
-            <View style={styles.timeInputGroup}>
-              <Text style={styles.timeLabel}>End</Text>
-              <TextInput
-                style={styles.timeInput}
-                value={workingHours.end}
-                onChangeText={(text) => setWorkingHours({ ...workingHours, end: text })}
-                placeholder="17:00"
-              />
-            </View>
-          </View>
+          <ClockTimePicker
+            value={settings.workingHours.start}
+            onTimeChange={(time) => handleWorkingHoursChange('start', time)}
+            label="Start Time"
+          />
+          
+          <ClockTimePicker
+            value={settings.workingHours.end}
+            onTimeChange={(time) => handleWorkingHoursChange('end', time)}
+            label="End Time"
+          />
         </View>
 
         {/* Default Duration */}
@@ -173,14 +402,14 @@ export default function SettingsScreen() {
                 key={duration}
                 style={[
                   styles.durationButton,
-                  defaultDuration === duration && styles.selectedDuration
+                  settings.defaultDuration === duration && styles.selectedDuration
                 ]}
-                onPress={() => setDefaultDuration(duration)}
+                onPress={() => handleSettingChange('defaultDuration', duration)}
               >
                 <Text
                   style={[
                     styles.durationText,
-                    defaultDuration === duration && styles.selectedDurationText
+                    settings.defaultDuration === duration && styles.selectedDurationText
                   ]}
                 >
                   {duration}min
@@ -193,7 +422,7 @@ export default function SettingsScreen() {
         {/* Categories */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Palette size={20} color="#4F8B3B" />
+            <Palette size={20} color={colors.accent} />
             <Text style={styles.sectionTitle}>Block Categories</Text>
           </View>
           
@@ -204,10 +433,15 @@ export default function SettingsScreen() {
               value={newCategoryName}
               onChangeText={setNewCategoryName}
               placeholder="Add new category..."
+              placeholderTextColor={colors.textSecondary}
             />
             <TouchableOpacity
-              style={styles.addCategoryButton}
+              style={[
+                styles.addCategoryButton,
+                isAddButtonDisabled && styles.addCategoryButtonDisabled
+              ]}
               onPress={editingCategory ? handleSaveEdit : handleAddCategory}
+              disabled={isAddButtonDisabled}
             >
               <Plus size={20} color="white" />
             </TouchableOpacity>
@@ -240,13 +474,13 @@ export default function SettingsScreen() {
                     style={styles.categoryActionButton}
                     onPress={() => handleEditCategory(category)}
                   >
-                    <Edit size={16} color="#8B7355" />
+                    <Edit size={16} color={colors.textSecondary} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={styles.categoryActionButton}
                     onPress={() => handleDeleteCategory(category.id)}
                   >
-                    <Trash2 size={16} color="#FF4444" />
+                    <Trash2 size={16} color={colors.error} />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -265,8 +499,14 @@ export default function SettingsScreen() {
 
         {/* Reset Data */}
         <View style={styles.section}>
-          <TouchableOpacity style={styles.dangerButton}>
-            <Text style={styles.dangerButtonText}>Reset All Data</Text>
+          <TouchableOpacity 
+            style={styles.dangerButton}
+            onPress={handleResetAllData}
+            disabled={isResetting}
+          >
+            <Text style={styles.dangerButtonText}>
+              {isResetting ? 'Resetting...' : 'Reset All Data'}
+            </Text>
           </TouchableOpacity>
           <Text style={styles.dangerDescription}>
             This will delete all your blocks, reflections, and settings.
@@ -276,213 +516,3 @@ export default function SettingsScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F1E8',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  header: {
-    alignItems: 'center',
-    paddingTop: 20,
-    paddingBottom: 16,
-    paddingHorizontal: 20,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#2A1810',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#8B7355',
-    fontWeight: '500',
-    marginTop: 4,
-  },
-  section: {
-    backgroundColor: '#FFF8E7',
-    marginHorizontal: 20,
-    marginBottom: 16,
-    borderRadius: 12,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: '#E8DCC0',
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-    gap: 8,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#2A1810',
-  },
-  settingItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  settingLabel: {
-    fontSize: 16,
-    color: '#2A1810',
-    fontWeight: '500',
-  },
-  settingDescription: {
-    fontSize: 12,
-    color: '#8B7355',
-    marginTop: 4,
-  },
-  timeInputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 16,
-  },
-  timeInputGroup: {
-    flex: 1,
-  },
-  timeLabel: {
-    fontSize: 14,
-    color: '#8B7355',
-    fontWeight: '500',
-    marginBottom: 8,
-  },
-  timeInput: {
-    backgroundColor: '#F5F1E8',
-    borderWidth: 1,
-    borderColor: '#E8DCC0',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-    color: '#2A1810',
-    textAlign: 'center',
-  },
-  timeSeparator: {
-    fontSize: 16,
-    color: '#8B7355',
-    fontWeight: '500',
-  },
-  durationContainer: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 12,
-  },
-  durationButton: {
-    flex: 1,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    backgroundColor: '#F5F1E8',
-    borderWidth: 1,
-    borderColor: '#E8DCC0',
-    alignItems: 'center',
-  },
-  selectedDuration: {
-    backgroundColor: '#FF6B35',
-    borderColor: '#FF6B35',
-  },
-  durationText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#8B7355',
-  },
-  selectedDurationText: {
-    color: 'white',
-  },
-  addCategoryContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
-  },
-  categoryInput: {
-    flex: 1,
-    backgroundColor: '#F5F1E8',
-    borderWidth: 1,
-    borderColor: '#E8DCC0',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 14,
-    color: '#2A1810',
-  },
-  addCategoryButton: {
-    backgroundColor: '#4F8B3B',
-    width: 44,
-    height: 44,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cancelEditButton: {
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  cancelEditText: {
-    color: '#FF4444',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  categoriesList: {
-    gap: 8,
-  },
-  categoryItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  categoryInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  categoryColor: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-  },
-  categoryName: {
-    fontSize: 16,
-    color: '#2A1810',
-    fontWeight: '500',
-  },
-  categoryActions: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  categoryActionButton: {
-    padding: 4,
-  },
-  appVersion: {
-    fontSize: 14,
-    color: '#8B7355',
-    fontWeight: '600',
-    marginBottom: 8,
-  },
-  appDescription: {
-    fontSize: 14,
-    color: '#8B7355',
-    lineHeight: 20,
-  },
-  dangerButton: {
-    backgroundColor: '#FF4444',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  dangerButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  dangerDescription: {
-    fontSize: 12,
-    color: '#8B7355',
-    textAlign: 'center',
-  },
-});

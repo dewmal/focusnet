@@ -4,6 +4,7 @@ import { TimeBlockData } from '@/components/TimeBlock';
 const BLOCKS_KEY = 'timeBlocks';
 const CATEGORIES_KEY = 'blockCategories';
 const REFLECTIONS_KEY = 'dailyReflections';
+const SETTINGS_KEY = 'appSettings';
 
 export interface BlockCategory {
   id: string;
@@ -19,6 +20,35 @@ export interface DailyReflection {
   reflection: string;
   rating: number;
 }
+
+export interface AppSettings {
+  isDarkMode: boolean;
+  notificationsEnabled: boolean;
+  workingHours: {
+    start: string;
+    end: string;
+  };
+  defaultDuration: number;
+}
+
+// Settings
+export const saveSettings = async (settings: AppSettings) => {
+  try {
+    await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.error('Error saving settings:', error);
+  }
+};
+
+export const loadSettings = async (): Promise<AppSettings> => {
+  try {
+    const settings = await AsyncStorage.getItem(SETTINGS_KEY);
+    return settings ? JSON.parse(settings) : getDefaultSettings();
+  } catch (error) {
+    console.error('Error loading settings:', error);
+    return getDefaultSettings();
+  }
+};
 
 // Time Blocks
 export const saveTimeBlocks = async (blocks: TimeBlockData[]) => {
@@ -79,7 +109,28 @@ export const loadReflections = async (): Promise<DailyReflection[]> => {
   }
 };
 
+// Reset all data
+export const resetAllData = async () => {
+  try {
+    await AsyncStorage.multiRemove([BLOCKS_KEY, CATEGORIES_KEY, REFLECTIONS_KEY, SETTINGS_KEY]);
+    console.log('All data has been reset successfully');
+  } catch (error) {
+    console.error('Error resetting data:', error);
+    throw error;
+  }
+};
+
 // Default data
+const getDefaultSettings = (): AppSettings => ({
+  isDarkMode: false,
+  notificationsEnabled: true,
+  workingHours: {
+    start: '09:00',
+    end: '17:00',
+  },
+  defaultDuration: 60,
+});
+
 const getDefaultBlocks = (): TimeBlockData[] => [
   {
     id: '1',
