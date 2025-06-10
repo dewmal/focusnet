@@ -12,7 +12,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { X, Clock, Tag, Plus, Trash2, Save, Target, Calendar, SquareCheck as CheckSquare, Square, CircleAlert as AlertCircle } from 'lucide-react-native';
+import { X, Clock, Tag, Plus, Trash2, Save, Target, Calendar, SquareCheck as CheckSquare, Square, CircleAlert as AlertCircle, Palette } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { loadCategories, BlockCategory } from '@/utils/storage';
 import { TimeBlockData } from './TimeBlock';
@@ -119,7 +119,6 @@ export default function TimeBlockModal({
   const handleTimeChange = (type: 'start' | 'end', value: string) => {
     if (type === 'start') {
       setStartTime(value);
-      // Clear time validation errors when user changes time
       if (errors.time) {
         const newErrors = { ...errors };
         delete newErrors.time;
@@ -127,7 +126,6 @@ export default function TimeBlockModal({
       }
     } else {
       setEndTime(value);
-      // Clear time validation errors when user changes time
       if (errors.time) {
         const newErrors = { ...errors };
         delete newErrors.time;
@@ -484,30 +482,85 @@ export default function TimeBlockModal({
       color: colors.primary,
       fontWeight: '700',
     },
+    // Enhanced Category Styles
+    categoryContainer: {
+      backgroundColor: colors.background,
+      borderRadius: 16,
+      padding: 20,
+      borderWidth: 2,
+      borderColor: errors.category ? colors.error : colors.border,
+    },
+    categoryHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    categoryHeaderTitle: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
+    },
+    selectedCategoryBadge: {
+      backgroundColor: selectedCategory ? customColor : colors.textSecondary,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+    },
+    selectedCategoryDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: 'white',
+    },
+    selectedCategoryText: {
+      fontSize: 12,
+      fontWeight: '700',
+      color: 'white',
+    },
     categoriesGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: 8,
+      gap: 12,
+      marginBottom: 20,
     },
     categoryChip: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 16,
-      paddingVertical: 10,
-      borderRadius: 20,
+      paddingVertical: 12,
+      borderRadius: 24,
       borderWidth: 2,
       borderColor: colors.border,
-      backgroundColor: colors.background,
-      gap: 8,
+      backgroundColor: colors.surface,
+      gap: 10,
+      minWidth: 100,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 2,
     },
     categoryChipSelected: {
-      borderColor: colors.primary,
-      backgroundColor: colors.primary + '15',
+      borderColor: customColor,
+      backgroundColor: customColor + '15',
+      borderWidth: 3,
+      transform: [{ scale: 1.05 }],
     },
     categoryDot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.2,
+      shadowRadius: 2,
+      elevation: 1,
     },
     categoryText: {
       fontSize: 14,
@@ -515,24 +568,51 @@ export default function TimeBlockModal({
       color: colors.text,
     },
     categoryTextSelected: {
-      color: colors.primary,
+      color: customColor,
+      fontWeight: '700',
+    },
+    colorCustomizationSection: {
+      marginTop: 16,
+      paddingTop: 16,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    colorSectionHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 16,
+      gap: 8,
+    },
+    colorSectionTitle: {
+      fontSize: 14,
+      fontWeight: '700',
+      color: colors.textSecondary,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
     },
     colorsGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: 12,
-      marginTop: 12,
+      justifyContent: 'center',
     },
     colorOption: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       borderWidth: 3,
       borderColor: 'transparent',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 6,
+      elevation: 4,
     },
     colorOptionSelected: {
       borderColor: colors.text,
-      transform: [{ scale: 1.1 }],
+      transform: [{ scale: 1.15 }],
+      shadowOpacity: 0.4,
+      shadowRadius: 8,
     },
     tasksSection: {
       marginBottom: 24,
@@ -821,65 +901,85 @@ export default function TimeBlockModal({
                 </View>
               </View>
 
-              {/* Category Section */}
+              {/* Enhanced Category Section */}
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <Tag size={16} color={colors.primary} />
                   <Text style={styles.sectionTitle}>Category</Text>
                 </View>
-                <View style={styles.categoriesGrid}>
-                  {categories.map((category) => (
-                    <TouchableOpacity
-                      key={category.id}
-                      style={[
-                        styles.categoryChip,
-                        selectedCategory?.id === category.id && styles.categoryChipSelected,
-                      ]}
-                      onPress={() => {
-                        setSelectedCategory(category);
-                        setCustomColor(category.color);
-                        if (errors.category) {
-                          const newErrors = { ...errors };
-                          delete newErrors.category;
-                          setErrors(newErrors);
-                        }
-                      }}
-                    >
-                      <View
-                        style={[styles.categoryDot, { backgroundColor: category.color }]}
-                      />
-                      <Text
+                
+                <View style={styles.categoryContainer}>
+                  <View style={styles.categoryHeader}>
+                    <Text style={styles.categoryHeaderTitle}>Category</Text>
+                    {selectedCategory && (
+                      <View style={styles.selectedCategoryBadge}>
+                        <View style={styles.selectedCategoryDot} />
+                        <Text style={styles.selectedCategoryText}>{selectedCategory.name}</Text>
+                      </View>
+                    )}
+                  </View>
+                  
+                  <View style={styles.categoriesGrid}>
+                    {categories.map((category) => (
+                      <TouchableOpacity
+                        key={category.id}
                         style={[
-                          styles.categoryText,
-                          selectedCategory?.id === category.id && styles.categoryTextSelected,
+                          styles.categoryChip,
+                          selectedCategory?.id === category.id && styles.categoryChipSelected,
                         ]}
+                        onPress={() => {
+                          setSelectedCategory(category);
+                          setCustomColor(category.color);
+                          if (errors.category) {
+                            const newErrors = { ...errors };
+                            delete newErrors.category;
+                            setErrors(newErrors);
+                          }
+                        }}
                       >
-                        {category.name}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
+                        <View
+                          style={[styles.categoryDot, { backgroundColor: category.color }]}
+                        />
+                        <Text
+                          style={[
+                            styles.categoryText,
+                            selectedCategory?.id === category.id && styles.categoryTextSelected,
+                          ]}
+                        >
+                          {category.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {/* Color Customization Section */}
+                  <View style={styles.colorCustomizationSection}>
+                    <View style={styles.colorSectionHeader}>
+                      <Palette size={14} color={colors.textSecondary} />
+                      <Text style={styles.colorSectionTitle}>Custom Color</Text>
+                    </View>
+                    <View style={styles.colorsGrid}>
+                      {predefinedColors.map((color) => (
+                        <TouchableOpacity
+                          key={color}
+                          style={[
+                            styles.colorOption,
+                            { backgroundColor: color },
+                            customColor === color && styles.colorOptionSelected,
+                          ]}
+                          onPress={() => setCustomColor(color)}
+                        />
+                      ))}
+                    </View>
+                  </View>
                 </View>
+                
                 {errors.category && (
                   <View style={styles.errorText}>
                     <AlertCircle size={12} color={colors.error} />
                     <Text style={[styles.errorText, { marginTop: 0, marginLeft: 0 }]}>{errors.category}</Text>
                   </View>
                 )}
-
-                {/* Color Options */}
-                <View style={styles.colorsGrid}>
-                  {predefinedColors.map((color) => (
-                    <TouchableOpacity
-                      key={color}
-                      style={[
-                        styles.colorOption,
-                        { backgroundColor: color },
-                        customColor === color && styles.colorOptionSelected,
-                      ]}
-                      onPress={() => setCustomColor(color)}
-                    />
-                  ))}
-                </View>
               </View>
             </View>
           </ScrollView>
