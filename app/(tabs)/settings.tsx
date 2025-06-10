@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Switch, TextInput, Alert } from 'react-native';
-import { Palette, Bell, User, Moon, Sun, Plus, Trash2, CreditCard as Edit } from 'lucide-react-native';
-import { loadCategories, saveCategories, BlockCategory, loadSettings, saveSettings, AppSettings, resetAllData } from '@/utils/storage';
+import { Palette, Bell, User, Moon, Sun, Plus, Trash2, CreditCard as Edit, RotateCcw } from 'lucide-react-native';
+import { loadCategories, saveCategories, BlockCategory, loadSettings, saveSettings, AppSettings, resetAllData, debugStorage } from '@/utils/storage';
 import { useTheme } from '@/contexts/ThemeContext';
 import ClockTimePicker from '@/components/ClockTimePicker';
 
@@ -138,7 +138,7 @@ export default function SettingsScreen() {
   const handleResetAllData = () => {
     Alert.alert(
       'Reset All Data',
-      'This will permanently delete all your time blocks, reflections, categories, and settings. This action cannot be undone.',
+      'This will permanently delete all your time blocks, reflections, categories, and settings. This action cannot be undone.\n\nAre you absolutely sure?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -147,17 +147,32 @@ export default function SettingsScreen() {
           onPress: async () => {
             setIsResetting(true);
             try {
+              console.log('Starting reset process...');
+              
+              // Debug storage before reset
+              await debugStorage();
+              
+              // Perform reset
               const success = await resetAllData();
+              
               if (success) {
-                // Reload default data
-                await loadData();
-                Alert.alert('Success', 'All data has been reset successfully');
+                console.log('Reset successful, reloading data...');
+                
+                // Force reload data after reset
+                setTimeout(async () => {
+                  await loadData();
+                  Alert.alert(
+                    'Reset Complete', 
+                    'All data has been reset successfully! The app has been restored to its default state.',
+                    [{ text: 'OK', onPress: () => console.log('Reset acknowledged') }]
+                  );
+                }, 500);
               } else {
                 Alert.alert('Error', 'Failed to reset data. Please try again.');
               }
             } catch (error) {
-              Alert.alert('Error', 'Failed to reset data. Please try again.');
               console.error('Reset error:', error);
+              Alert.alert('Error', 'Failed to reset data. Please try again.');
             } finally {
               setIsResetting(false);
             }
@@ -348,6 +363,9 @@ export default function SettingsScreen() {
       alignItems: 'center',
       marginBottom: 8,
       opacity: isResetting ? 0.6 : 1,
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: 8,
     },
     dangerButtonText: {
       color: 'white',
@@ -358,6 +376,7 @@ export default function SettingsScreen() {
       fontSize: 12,
       color: colors.textSecondary,
       textAlign: 'center',
+      lineHeight: 16,
     },
   });
 
@@ -541,12 +560,14 @@ export default function SettingsScreen() {
             onPress={handleResetAllData}
             disabled={isResetting}
           >
+            <RotateCcw size={16} color="white" />
             <Text style={styles.dangerButtonText}>
               {isResetting ? 'Resetting...' : 'Reset All Data'}
             </Text>
           </TouchableOpacity>
           <Text style={styles.dangerDescription}>
-            This will delete all your blocks, reflections, and settings.
+            This will delete all your blocks, reflections, categories, and settings.{'\n'}
+            This action cannot be undone.
           </Text>
         </View>
       </ScrollView>

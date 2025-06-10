@@ -109,27 +109,52 @@ export const loadReflections = async (): Promise<DailyReflection[]> => {
   }
 };
 
-// Reset all data - FIXED VERSION
-export const resetAllData = async () => {
+// Reset all data - ENHANCED VERSION
+export const resetAllData = async (): Promise<boolean> => {
   try {
+    console.log('Starting data reset...');
+    
     // Get all keys from AsyncStorage
     const allKeys = await AsyncStorage.getAllKeys();
+    console.log('All AsyncStorage keys:', allKeys);
     
-    // Filter keys that belong to our app
-    const appKeys = allKeys.filter(key => 
-      key === BLOCKS_KEY || 
-      key === CATEGORIES_KEY || 
-      key === REFLECTIONS_KEY || 
-      key === SETTINGS_KEY ||
-      key === 'app_theme_mode' // Include theme storage key
-    );
+    // Define all possible app keys
+    const appKeys = [
+      BLOCKS_KEY,
+      CATEGORIES_KEY, 
+      REFLECTIONS_KEY,
+      SETTINGS_KEY,
+      'app_theme_mode' // Theme storage key from ThemeContext
+    ];
+    
+    // Filter keys that exist and belong to our app
+    const keysToRemove = allKeys.filter(key => appKeys.includes(key));
+    console.log('Keys to remove:', keysToRemove);
     
     // Remove all app-related data
-    if (appKeys.length > 0) {
-      await AsyncStorage.multiRemove(appKeys);
+    if (keysToRemove.length > 0) {
+      await AsyncStorage.multiRemove(keysToRemove);
+      console.log('Successfully removed keys:', keysToRemove);
     }
     
-    console.log('All data has been reset successfully');
+    // Verify removal by checking if keys still exist
+    const remainingKeys = await AsyncStorage.getAllKeys();
+    const stillExists = remainingKeys.filter(key => appKeys.includes(key));
+    
+    if (stillExists.length > 0) {
+      console.warn('Some keys still exist after removal:', stillExists);
+      // Try to remove them individually
+      for (const key of stillExists) {
+        await AsyncStorage.removeItem(key);
+      }
+    }
+    
+    // Reset to default data
+    await saveTimeBlocks(getDefaultBlocks());
+    await saveCategories(getDefaultCategories());
+    await saveSettings(getDefaultSettings());
+    
+    console.log('Data reset completed successfully');
     return true;
   } catch (error) {
     console.error('Error resetting data:', error);
@@ -137,10 +162,11 @@ export const resetAllData = async () => {
   }
 };
 
-// Clear specific data type
+// Clear specific data types
 export const clearTimeBlocks = async () => {
   try {
     await AsyncStorage.removeItem(BLOCKS_KEY);
+    await saveTimeBlocks(getDefaultBlocks());
   } catch (error) {
     console.error('Error clearing time blocks:', error);
   }
@@ -149,6 +175,7 @@ export const clearTimeBlocks = async () => {
 export const clearCategories = async () => {
   try {
     await AsyncStorage.removeItem(CATEGORIES_KEY);
+    await saveCategories(getDefaultCategories());
   } catch (error) {
     console.error('Error clearing categories:', error);
   }
@@ -165,8 +192,26 @@ export const clearReflections = async () => {
 export const clearSettings = async () => {
   try {
     await AsyncStorage.removeItem(SETTINGS_KEY);
+    await saveSettings(getDefaultSettings());
   } catch (error) {
     console.error('Error clearing settings:', error);
+  }
+};
+
+// Debug function to check storage state
+export const debugStorage = async () => {
+  try {
+    const allKeys = await AsyncStorage.getAllKeys();
+    console.log('=== STORAGE DEBUG ===');
+    console.log('All keys:', allKeys);
+    
+    for (const key of allKeys) {
+      const value = await AsyncStorage.getItem(key);
+      console.log(`${key}:`, value ? JSON.parse(value) : null);
+    }
+    console.log('=== END DEBUG ===');
+  } catch (error) {
+    console.error('Error debugging storage:', error);
   }
 };
 
