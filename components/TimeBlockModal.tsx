@@ -207,27 +207,27 @@ export default function TimeBlockModal({
   const styles = StyleSheet.create({
     modal: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.7)',
+      backgroundColor: 'rgba(0, 0, 0, 0.85)',
       justifyContent: 'center',
       alignItems: 'center',
     },
     modalContent: {
-      backgroundColor: colors.surface,
+      backgroundColor: '#2A2A2A',
       borderRadius: 24,
       width: '94%',
       maxHeight: screenHeight * 0.92,
       maxWidth: 520,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 20 },
-      shadowOpacity: 0.3,
+      shadowOpacity: 0.5,
       shadowRadius: 30,
-      elevation: 15,
+      elevation: 20,
     },
     header: {
       padding: 24,
       borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-      backgroundColor: colors.background + '80',
+      borderBottomColor: '#404040',
+      backgroundColor: '#333333',
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
     },
@@ -243,23 +243,23 @@ export default function TimeBlockModal({
     headerTitle: {
       fontSize: 24,
       fontWeight: '800',
-      color: colors.text,
+      color: '#FFFFFF',
       marginBottom: 4,
     },
     headerSubtitle: {
       fontSize: 14,
-      color: colors.textSecondary,
+      color: '#B0B0B0',
       fontWeight: '500',
     },
     closeButton: {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: colors.background,
+      backgroundColor: '#404040',
       alignItems: 'center',
       justifyContent: 'center',
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: '#555555',
     },
     scrollView: {
       maxHeight: screenHeight * 0.55,
@@ -289,34 +289,34 @@ export default function TimeBlockModal({
     sectionTitle: {
       fontSize: 18,
       fontWeight: '700',
-      color: colors.text,
+      color: '#FFFFFF',
       marginBottom: 2,
     },
     sectionDescription: {
       fontSize: 13,
-      color: colors.textSecondary,
+      color: '#B0B0B0',
       fontWeight: '500',
     },
     titleInput: {
-      backgroundColor: colors.background,
+      backgroundColor: '#1A1A1A',
       borderWidth: 2,
-      borderColor: colors.border,
+      borderColor: '#404040',
       borderRadius: 16,
       padding: 20,
       fontSize: 18,
-      color: colors.text,
+      color: '#FFFFFF',
       fontWeight: '600',
     },
     titleInputFocused: {
-      borderColor: colors.primary,
-      backgroundColor: colors.surface,
+      borderColor: '#FF6B35',
+      backgroundColor: '#2A2A2A',
     },
     titleInputError: {
-      borderColor: colors.error,
+      borderColor: '#FF4444',
     },
     errorText: {
       fontSize: 12,
-      color: colors.error,
+      color: '#FF4444',
       marginTop: 8,
       marginLeft: 4,
       fontWeight: '500',
@@ -324,48 +324,83 @@ export default function TimeBlockModal({
     timeContainer: {
       gap: 20,
     },
+    timeSection: {
+      marginBottom: 24,
+    },
+    timeSectionTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: '#B0B0B0',
+      marginBottom: 16,
+      textAlign: 'center',
+    },
     timeRow: {
       flexDirection: 'row',
       gap: 16,
-      alignItems: 'flex-end',
+      marginBottom: 20,
     },
-    timePickerContainer: {
+    timePickerWrapper: {
       flex: 1,
     },
-    durationCard: {
-      backgroundColor: colors.primary + '15',
-      paddingHorizontal: 20,
-      paddingVertical: 16,
-      borderRadius: 20,
-      alignItems: 'center',
+    timePickerLabel: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: '#B0B0B0',
+      marginBottom: 8,
+    },
+    timePickerButton: {
+      backgroundColor: '#1A1A1A',
       borderWidth: 2,
-      borderColor: colors.primary + '30',
-      minWidth: 90,
+      borderColor: '#FF6B35',
+      borderRadius: 12,
+      padding: 20,
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 80,
+    },
+    timePickerButtonActive: {
+      backgroundColor: '#FF6B35',
+      borderColor: '#FF6B35',
+    },
+    timePickerTime: {
+      fontSize: 24,
+      fontWeight: '700',
+      color: '#FF6B35',
+      marginBottom: 4,
+    },
+    timePickerTimeActive: {
+      color: '#FFFFFF',
+    },
+    timePickerPeriod: {
+      fontSize: 12,
+      fontWeight: '600',
+      color: '#B0B0B0',
+      letterSpacing: 1,
+    },
+    timePickerPeriodActive: {
+      color: '#FFFFFF',
+    },
+    durationCard: {
+      backgroundColor: '#FF6B35',
+      paddingHorizontal: 20,
+      paddingVertical: 20,
+      borderRadius: 16,
+      alignItems: 'center',
+      minWidth: 100,
+      alignSelf: 'center',
+      marginTop: 16,
     },
     durationLabel: {
       fontSize: 11,
       fontWeight: '700',
-      color: colors.primary,
+      color: '#FFFFFF',
       marginBottom: 4,
-      letterSpacing: 0.5,
+      letterSpacing: 1,
     },
     durationText: {
-      fontSize: 18,
+      fontSize: 20,
       fontWeight: '800',
-      color: colors.primary,
-    },
-    timePreview: {
-      backgroundColor: colors.background,
-      padding: 20,
-      borderRadius: 16,
-      borderWidth: 1,
-      borderColor: colors.border,
-      alignItems: 'center',
-    },
-    timePreviewText: {
-      fontSize: 16,
-      color: colors.text,
-      fontWeight: '600',
+      color: '#FFFFFF',
     },
     categoriesGrid: {
       flexDirection: 'row',
@@ -379,15 +414,14 @@ export default function TimeBlockModal({
       paddingVertical: 14,
       borderRadius: 24,
       borderWidth: 2,
-      borderColor: colors.border,
-      backgroundColor: colors.background,
+      borderColor: '#404040',
+      backgroundColor: '#1A1A1A',
       gap: 10,
       minWidth: 120,
     },
     categoryChipSelected: {
-      borderColor: colors.primary,
-      backgroundColor: colors.primary + '15',
-      transform: [{ scale: 1.02 }],
+      borderColor: '#FF6B35',
+      backgroundColor: '#FF6B35' + '20',
     },
     categoryDot: {
       width: 12,
@@ -397,10 +431,10 @@ export default function TimeBlockModal({
     categoryText: {
       fontSize: 14,
       fontWeight: '600',
-      color: colors.text,
+      color: '#FFFFFF',
     },
     categoryTextSelected: {
-      color: colors.primary,
+      color: '#FF6B35',
       fontWeight: '700',
     },
     colorsSection: {
@@ -422,12 +456,12 @@ export default function TimeBlockModal({
       justifyContent: 'center',
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
+      shadowOpacity: 0.3,
       shadowRadius: 8,
       elevation: 4,
     },
     colorOptionSelected: {
-      borderColor: colors.text,
+      borderColor: '#FFFFFF',
       transform: [{ scale: 1.15 }],
     },
     colorPreview: {
@@ -445,17 +479,17 @@ export default function TimeBlockModal({
     },
     taskInput: {
       flex: 1,
-      backgroundColor: colors.background,
+      backgroundColor: '#1A1A1A',
       borderWidth: 2,
-      borderColor: colors.border,
+      borderColor: '#404040',
       borderRadius: 16,
       padding: 16,
       fontSize: 14,
-      color: colors.text,
+      color: '#FFFFFF',
       fontWeight: '500',
     },
     taskInputFocused: {
-      borderColor: colors.primary,
+      borderColor: '#FF6B35',
     },
     taskButton: {
       width: 44,
@@ -465,14 +499,14 @@ export default function TimeBlockModal({
       justifyContent: 'center',
     },
     addTaskButton: {
-      backgroundColor: colors.primary + '20',
+      backgroundColor: '#FF6B35' + '30',
       borderWidth: 2,
-      borderColor: colors.primary + '40',
+      borderColor: '#FF6B35' + '60',
     },
     removeTaskButton: {
-      backgroundColor: colors.error + '20',
+      backgroundColor: '#FF4444' + '30',
       borderWidth: 2,
-      borderColor: colors.error + '40',
+      borderColor: '#FF4444' + '60',
     },
     addTaskRow: {
       flexDirection: 'row',
@@ -480,24 +514,24 @@ export default function TimeBlockModal({
       justifyContent: 'center',
       paddingVertical: 20,
       borderWidth: 2,
-      borderColor: colors.border,
+      borderColor: '#404040',
       borderStyle: 'dashed',
       borderRadius: 16,
       gap: 10,
-      backgroundColor: colors.background + '50',
+      backgroundColor: '#1A1A1A',
     },
     addTaskText: {
       fontSize: 14,
-      color: colors.textSecondary,
+      color: '#B0B0B0',
       fontWeight: '600',
     },
     footer: {
       flexDirection: 'row',
       padding: 24,
       borderTopWidth: 1,
-      borderTopColor: colors.border,
+      borderTopColor: '#404040',
       gap: 16,
-      backgroundColor: colors.background + '50',
+      backgroundColor: '#333333',
       borderBottomLeftRadius: 24,
       borderBottomRightRadius: 24,
     },
@@ -511,20 +545,20 @@ export default function TimeBlockModal({
       gap: 10,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
+      shadowOpacity: 0.3,
       shadowRadius: 8,
       elevation: 4,
     },
     cancelButton: {
-      backgroundColor: colors.surface,
+      backgroundColor: '#404040',
       borderWidth: 2,
-      borderColor: colors.border,
+      borderColor: '#555555',
     },
     saveButton: {
-      backgroundColor: colors.primary,
+      backgroundColor: '#FF6B35',
     },
     saveButtonDisabled: {
-      backgroundColor: colors.textSecondary,
+      backgroundColor: '#666666',
       opacity: 0.6,
     },
     buttonText: {
@@ -532,15 +566,15 @@ export default function TimeBlockModal({
       fontWeight: '700',
     },
     cancelButtonText: {
-      color: colors.textSecondary,
+      color: '#B0B0B0',
     },
     saveButtonText: {
-      color: 'white',
+      color: '#FFFFFF',
     },
     validationSummary: {
-      backgroundColor: colors.error + '10',
+      backgroundColor: '#FF4444' + '20',
       borderWidth: 2,
-      borderColor: colors.error + '30',
+      borderColor: '#FF4444' + '50',
       borderRadius: 16,
       padding: 20,
       marginBottom: 24,
@@ -548,12 +582,12 @@ export default function TimeBlockModal({
     validationTitle: {
       fontSize: 14,
       fontWeight: '700',
-      color: colors.error,
+      color: '#FF4444',
       marginBottom: 12,
     },
     validationItem: {
       fontSize: 12,
-      color: colors.error,
+      color: '#FF4444',
       marginBottom: 6,
       fontWeight: '500',
     },
@@ -582,7 +616,7 @@ export default function TimeBlockModal({
                 </Text>
               </View>
               <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-                <X size={20} color={colors.textSecondary} />
+                <X size={20} color="#B0B0B0" />
               </TouchableOpacity>
             </View>
           </View>
@@ -594,7 +628,7 @@ export default function TimeBlockModal({
               {hasErrors && (
                 <View style={styles.validationSummary}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                    <AlertCircle size={16} color={colors.error} />
+                    <AlertCircle size={16} color="#FF4444" />
                     <Text style={[styles.validationTitle, { marginLeft: 8, marginBottom: 0 }]}>
                       Please fix the following issues:
                     </Text>
@@ -608,8 +642,8 @@ export default function TimeBlockModal({
               {/* Title Section */}
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
-                  <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '20' }]}>
-                    <Target size={18} color={colors.primary} />
+                  <View style={[styles.sectionIcon, { backgroundColor: '#FF6B35' + '30' }]}>
+                    <Target size={18} color="#FF6B35" />
                   </View>
                   <View style={styles.sectionContent}>
                     <Text style={styles.sectionTitle}>Block Title</Text>
@@ -631,72 +665,95 @@ export default function TimeBlockModal({
                     }
                   }}
                   placeholder="Enter a descriptive title..."
-                  placeholderTextColor={colors.textSecondary}
+                  placeholderTextColor="#666666"
                   maxLength={50}
                 />
                 {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
               </View>
 
-              {/* Time Section */}
+              {/* Time Section - Matching the design */}
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
-                  <View style={[styles.sectionIcon, { backgroundColor: colors.secondary + '20' }]}>
-                    <Clock size={18} color={colors.secondary} />
+                  <View style={[styles.sectionIcon, { backgroundColor: '#FF6B35' + '30' }]}>
+                    <Clock size={18} color="#FF6B35" />
                   </View>
                   <View style={styles.sectionContent}>
                     <Text style={styles.sectionTitle}>Time & Duration</Text>
                     <Text style={styles.sectionDescription}>When will this happen?</Text>
                   </View>
                 </View>
+                
                 <View style={styles.timeContainer}>
                   <View style={styles.timeRow}>
-                    <View style={styles.timePickerContainer}>
-                      <ClockTimePicker
-                        value={startTime}
-                        onTimeChange={(time) => {
-                          setStartTime(time);
-                          if (errors.time) {
-                            const newErrors = { ...errors };
-                            delete newErrors.time;
-                            setErrors(newErrors);
-                          }
-                        }}
-                        label="Start Time"
-                      />
+                    <View style={styles.timePickerWrapper}>
+                      <Text style={styles.timePickerLabel}>Start Time</Text>
+                      <TouchableOpacity style={styles.timePickerButton}>
+                        <Clock size={20} color="#FF6B35" />
+                        <Text style={styles.timePickerTime}>
+                          {formatTime12Hour(startTime).split(' ')[0]}
+                        </Text>
+                        <Text style={styles.timePickerPeriod}>
+                          {formatTime12Hour(startTime).split(' ')[1]}
+                        </Text>
+                      </TouchableOpacity>
                     </View>
-                    <View style={styles.timePickerContainer}>
-                      <ClockTimePicker
-                        value={endTime}
-                        onTimeChange={(time) => {
-                          setEndTime(time);
-                          if (errors.time) {
-                            const newErrors = { ...errors };
-                            delete newErrors.time;
-                            setErrors(newErrors);
-                          }
-                        }}
-                        label="End Time"
-                      />
-                    </View>
-                    <View style={styles.durationCard}>
-                      <Text style={styles.durationLabel}>DURATION</Text>
-                      <Text style={styles.durationText}>{getDuration()}</Text>
+                    
+                    <View style={styles.timePickerWrapper}>
+                      <Text style={styles.timePickerLabel}>End Time</Text>
+                      <TouchableOpacity style={styles.timePickerButton}>
+                        <Clock size={20} color="#FF6B35" />
+                        <Text style={styles.timePickerTime}>
+                          {formatTime12Hour(endTime).split(' ')[0]}
+                        </Text>
+                        <Text style={styles.timePickerPeriod}>
+                          {formatTime12Hour(endTime).split(' ')[1]}
+                        </Text>
+                      </TouchableOpacity>
                     </View>
                   </View>
-                  <View style={styles.timePreview}>
-                    <Text style={styles.timePreviewText}>
-                      📅 {formatTime12Hour(startTime)} - {formatTime12Hour(endTime)}
-                    </Text>
+                  
+                  <View style={styles.durationCard}>
+                    <Text style={styles.durationLabel}>DURATION</Text>
+                    <Text style={styles.durationText}>{getDuration()}</Text>
                   </View>
+                  
                   {errors.time && <Text style={styles.errorText}>{errors.time}</Text>}
+                </View>
+
+                {/* Hidden time pickers for functionality */}
+                <View style={{ opacity: 0, height: 0, overflow: 'hidden' }}>
+                  <ClockTimePicker
+                    value={startTime}
+                    onTimeChange={(time) => {
+                      setStartTime(time);
+                      if (errors.time) {
+                        const newErrors = { ...errors };
+                        delete newErrors.time;
+                        setErrors(newErrors);
+                      }
+                    }}
+                    label="Start Time"
+                  />
+                  <ClockTimePicker
+                    value={endTime}
+                    onTimeChange={(time) => {
+                      setEndTime(time);
+                      if (errors.time) {
+                        const newErrors = { ...errors };
+                        delete newErrors.time;
+                        setErrors(newErrors);
+                      }
+                    }}
+                    label="End Time"
+                  />
                 </View>
               </View>
 
               {/* Category Section */}
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
-                  <View style={[styles.sectionIcon, { backgroundColor: colors.accent + '20' }]}>
-                    <Tag size={18} color={colors.accent} />
+                  <View style={[styles.sectionIcon, { backgroundColor: '#FF6B35' + '30' }]}>
+                    <Tag size={18} color="#FF6B35" />
                   </View>
                   <View style={styles.sectionContent}>
                     <Text style={styles.sectionTitle}>Category</Text>
@@ -762,8 +819,8 @@ export default function TimeBlockModal({
               {/* Tasks Section */}
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
-                  <View style={[styles.sectionIcon, { backgroundColor: colors.success + '20' }]}>
-                    <Calendar size={18} color={colors.success} />
+                  <View style={[styles.sectionIcon, { backgroundColor: '#FF6B35' + '30' }]}>
+                    <Calendar size={18} color="#FF6B35" />
                   </View>
                   <View style={styles.sectionContent}>
                     <Text style={styles.sectionTitle}>Tasks</Text>
@@ -778,7 +835,7 @@ export default function TimeBlockModal({
                         value={task}
                         onChangeText={(value) => handleTaskChange(index, value)}
                         placeholder={`Task ${index + 1}...`}
-                        placeholderTextColor={colors.textSecondary}
+                        placeholderTextColor="#666666"
                         maxLength={100}
                       />
                       {tasks.length > 1 && (
@@ -786,7 +843,7 @@ export default function TimeBlockModal({
                           style={[styles.taskButton, styles.removeTaskButton]}
                           onPress={() => handleRemoveTask(index)}
                         >
-                          <Trash2 size={16} color={colors.error} />
+                          <Trash2 size={16} color="#FF4444" />
                         </TouchableOpacity>
                       )}
                     </View>
@@ -794,7 +851,7 @@ export default function TimeBlockModal({
                   
                   {tasks.length < 5 && (
                     <TouchableOpacity style={styles.addTaskRow} onPress={handleAddTask}>
-                      <Plus size={16} color={colors.textSecondary} />
+                      <Plus size={16} color="#B0B0B0" />
                       <Text style={styles.addTaskText}>Add another task</Text>
                     </TouchableOpacity>
                   )}
