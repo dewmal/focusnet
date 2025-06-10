@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
 import { Plus, Calendar, TrendingUp } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import TimeBlock, { TimeBlockData } from '@/components/TimeBlock';
 import MobileHeader from '@/components/MobileHeader';
 import { loadTimeBlocks, saveTimeBlocks } from '@/utils/storage';
@@ -23,12 +24,11 @@ export default function TodayScreen() {
   }, []);
 
   // Reload data when screen comes into focus
-  useEffect(() => {
-    const unsubscribe = router.subscribe(() => {
+  useFocusEffect(
+    useCallback(() => {
       loadData();
-    });
-    return unsubscribe;
-  }, []);
+    }, [])
+  );
 
   const loadData = async () => {
     const savedBlocks = await loadTimeBlocks();
