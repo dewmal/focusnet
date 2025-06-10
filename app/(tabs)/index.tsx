@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
 import { Plus, Calendar, TrendingUp } from 'lucide-react-native';
 import TimeBlock, { TimeBlockData } from '@/components/TimeBlock';
+import TimeBlockModal from '@/components/TimeBlockModal';
 import { loadTimeBlocks, saveTimeBlocks } from '@/utils/storage';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -9,6 +10,8 @@ export default function TodayScreen() {
   const [blocks, setBlocks] = useState<TimeBlockData[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [editingBlock, setEditingBlock] = useState<TimeBlockData | null>(null);
   const { colors } = useTheme();
 
   useEffect(() => {
@@ -26,8 +29,8 @@ export default function TodayScreen() {
   };
 
   const handleBlockPress = (block: TimeBlockData) => {
-    // Here you could navigate to block details or edit screen
-    console.log('Block pressed:', block.title);
+    setEditingBlock(block);
+    setIsModalVisible(true);
   };
 
   const handleStartFocus = (block: TimeBlockData) => {
@@ -40,6 +43,29 @@ export default function TodayScreen() {
     );
     setBlocks(updatedBlocks);
     saveTimeBlocks(updatedBlocks);
+  };
+
+  const handleSaveBlock = async (blockData: TimeBlockData) => {
+    try {
+      let updatedBlocks;
+      
+      if (editingBlock) {
+        // Update existing block
+        updatedBlocks = blocks.map(b => 
+          b.id === blockData.id ? blockData : b
+        );
+      } else {
+        // Add new block
+        updatedBlocks = [...blocks, blockData];
+      }
+      
+      setBlocks(updatedBlocks);
+      await saveTimeBlocks(updatedBlocks);
+      setEditingBlock(null);
+    } catch (error) {
+      console.error('Error saving block:', error);
+      throw error;
+    }
   };
 
   const handleAddQuickBlock = () => {
@@ -126,7 +152,13 @@ export default function TodayScreen() {
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Quick Block', onPress: handleAddQuickBlock },
-        { text: 'Custom Block', onPress: () => Alert.alert('Coming Soon', 'Custom block creation will be available soon!') },
+        { 
+          text: 'Custom Block', 
+          onPress: () => {
+            setEditingBlock(null);
+            setIsModalVisible(true);
+          }
+        },
       ]
     );
   };
@@ -194,10 +226,10 @@ export default function TodayScreen() {
       alignItems: 'center',
       justifyContent: 'center',
       shadowColor: colors.primary,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 5,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 3,
     },
     currentTimeContainer: {
       alignItems: 'center',
@@ -376,6 +408,17 @@ export default function TodayScreen() {
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Time Block Modal */}
+      <TimeBlockModal
+        visible={isModalVisible}
+        onClose={() => {
+          setIsModalVisible(false);
+          setEditingBlock(null);
+        }}
+        onSave={handleSaveBlock}
+        editingBlock={editingBlock}
+      />
     </SafeAreaView>
   );
 }
