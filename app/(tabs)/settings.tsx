@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Switch, TextInput, Alert } from 'react-native';
-import { Palette, Bell, User, Moon, Sun, Plus, Trash2, CreditCard as Edit } from 'lucide-react-native';
+import { Palette, Bell, User, Moon, Sun, Plus, Trash2, Edit } from 'lucide-react-native';
 import { loadCategories, saveCategories, BlockCategory, loadSettings, saveSettings, AppSettings, resetAllData } from '@/utils/storage';
 import { useTheme } from '@/contexts/ThemeContext';
 import ClockTimePicker from '@/components/ClockTimePicker';
@@ -51,21 +51,28 @@ export default function SettingsScreen() {
       return;
     }
 
-    const colors = ['#FF6B35', '#2E8B8B', '#8B4F9F', '#4F8B3B', '#B85C38', '#6B4E7D', '#7D6B4E'];
-    const usedColors = categories.map(c => c.color);
-    const availableColor = colors.find(c => !usedColors.includes(c)) || colors[0];
+    try {
+      const colors = ['#FF6B35', '#2E8B8B', '#8B4F9F', '#4F8B3B', '#B85C38', '#6B4E7D', '#7D6B4E'];
+      const usedColors = categories.map(c => c.color);
+      const availableColor = colors.find(c => !usedColors.includes(c)) || colors[0];
 
-    const newCategory: BlockCategory = {
-      id: Date.now().toString(),
-      name: newCategoryName.trim(),
-      color: availableColor,
-      icon: 'circle',
-    };
+      const newCategory: BlockCategory = {
+        id: Date.now().toString(),
+        name: newCategoryName.trim(),
+        color: availableColor,
+        icon: 'circle',
+      };
 
-    const updatedCategories = [...categories, newCategory];
-    setCategories(updatedCategories);
-    await saveCategories(updatedCategories);
-    setNewCategoryName('');
+      const updatedCategories = [...categories, newCategory];
+      setCategories(updatedCategories);
+      await saveCategories(updatedCategories);
+      setNewCategoryName('');
+      
+      Alert.alert('Success', `Category "${newCategory.name}" has been added!`);
+    } catch (error) {
+      console.error('Error adding category:', error);
+      Alert.alert('Error', 'Failed to add category. Please try again.');
+    }
   };
 
   const handleDeleteCategory = (categoryId: string) => {
@@ -78,9 +85,15 @@ export default function SettingsScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: async () => {
-            const updatedCategories = categories.filter(c => c.id !== categoryId);
-            setCategories(updatedCategories);
-            await saveCategories(updatedCategories);
+            try {
+              const updatedCategories = categories.filter(c => c.id !== categoryId);
+              setCategories(updatedCategories);
+              await saveCategories(updatedCategories);
+              Alert.alert('Success', 'Category has been deleted!');
+            } catch (error) {
+              console.error('Error deleting category:', error);
+              Alert.alert('Error', 'Failed to delete category. Please try again.');
+            }
           }
         }
       ]
@@ -93,16 +106,31 @@ export default function SettingsScreen() {
   };
 
   const handleSaveEdit = async () => {
-    if (!editingCategory || !newCategoryName.trim()) return;
+    if (!editingCategory || !newCategoryName.trim()) {
+      Alert.alert('Error', 'Please enter a category name');
+      return;
+    }
 
-    const updatedCategories = categories.map(c =>
-      c.id === editingCategory.id
-        ? { ...c, name: newCategoryName.trim() }
-        : c
-    );
-    
-    setCategories(updatedCategories);
-    await saveCategories(updatedCategories);
+    try {
+      const updatedCategories = categories.map(c =>
+        c.id === editingCategory.id
+          ? { ...c, name: newCategoryName.trim() }
+          : c
+      );
+      
+      setCategories(updatedCategories);
+      await saveCategories(updatedCategories);
+      setEditingCategory(null);
+      setNewCategoryName('');
+      
+      Alert.alert('Success', 'Category has been updated!');
+    } catch (error) {
+      console.error('Error updating category:', error);
+      Alert.alert('Error', 'Failed to update category. Please try again.');
+    }
+  };
+
+  const handleCancelEdit = () => {
     setEditingCategory(null);
     setNewCategoryName('');
   };
@@ -119,10 +147,14 @@ export default function SettingsScreen() {
           onPress: async () => {
             setIsResetting(true);
             try {
-              await resetAllData();
-              // Reload default data
-              await loadData();
-              Alert.alert('Success', 'All data has been reset successfully');
+              const success = await resetAllData();
+              if (success) {
+                // Reload default data
+                await loadData();
+                Alert.alert('Success', 'All data has been reset successfully');
+              } else {
+                Alert.alert('Error', 'Failed to reset data. Please try again.');
+              }
             } catch (error) {
               Alert.alert('Error', 'Failed to reset data. Please try again.');
               console.error('Reset error:', error);
@@ -136,6 +168,9 @@ export default function SettingsScreen() {
   };
 
   const durations = [30, 45, 60, 90, 120];
+
+  // Check if add button should be disabled
+  const isAddButtonDisabled = !newCategoryName.trim();
 
   const styles = StyleSheet.create({
     container: {
@@ -241,7 +276,7 @@ export default function SettingsScreen() {
       color: colors.text,
     },
     addCategoryButton: {
-      backgroundColor: colors.accent,
+      backgroundColor: colors.primary,
       width: 44,
       height: 44,
       borderRadius: 8,
@@ -251,6 +286,9 @@ export default function SettingsScreen() {
     addCategoryButtonDisabled: {
       backgroundColor: colors.textSecondary,
       opacity: 0.5,
+    },
+    editButton: {
+      backgroundColor: colors.secondary,
     },
     cancelEditButton: {
       alignItems: 'center',
@@ -322,8 +360,6 @@ export default function SettingsScreen() {
       textAlign: 'center',
     },
   });
-
-  const isAddButtonDisabled = !newCategoryName.trim();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -433,12 +469,15 @@ export default function SettingsScreen() {
               style={styles.categoryInput}
               value={newCategoryName}
               onChangeText={setNewCategoryName}
-              placeholder="Add new category..."
+              placeholder={editingCategory ? "Edit category name..." : "Add new category..."}
               placeholderTextColor={colors.textSecondary}
+              returnKeyType="done"
+              onSubmitEditing={editingCategory ? handleSaveEdit : handleAddCategory}
             />
             <TouchableOpacity
               style={[
                 styles.addCategoryButton,
+                editingCategory && styles.editButton,
                 isAddButtonDisabled && styles.addCategoryButtonDisabled
               ]}
               onPress={editingCategory ? handleSaveEdit : handleAddCategory}
@@ -451,10 +490,7 @@ export default function SettingsScreen() {
           {editingCategory && (
             <TouchableOpacity
               style={styles.cancelEditButton}
-              onPress={() => {
-                setEditingCategory(null);
-                setNewCategoryName('');
-              }}
+              onPress={handleCancelEdit}
             >
               <Text style={styles.cancelEditText}>Cancel Edit</Text>
             </TouchableOpacity>
