@@ -260,55 +260,6 @@ export default function TimeBlockModal({
     }
   };
 
-  const Dropdown = ({ 
-    visible, 
-    onClose, 
-    options, 
-    onSelect, 
-    selectedValue,
-    style = {}
-  }: {
-    visible: boolean;
-    onClose: () => void;
-    options: any[];
-    onSelect: (value: any) => void;
-    selectedValue: any;
-    style?: any;
-  }) => {
-    if (!visible) return null;
-
-    return (
-      <View style={[styles.dropdown, style]}>
-        <ScrollView style={styles.dropdownScroll} showsVerticalScrollIndicator={false}>
-          {options.map((option, index) => {
-            const value = typeof option === 'object' ? option.value : option;
-            const label = typeof option === 'object' ? option.label : option.toString().padStart(2, '0');
-            const isSelected = selectedValue === value;
-            
-            return (
-              <TouchableOpacity
-                key={index}
-                style={[styles.dropdownOption, isSelected && styles.dropdownOptionSelected]}
-                onPress={() => {
-                  onSelect(value);
-                  onClose();
-                }}
-                activeOpacity={0.7}
-              >
-                <Text style={[
-                  styles.dropdownOptionText,
-                  isSelected && styles.dropdownOptionTextSelected
-                ]}>
-                  {label}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-      </View>
-    );
-  };
-
   const styles = StyleSheet.create({
     modal: {
       flex: 1,
@@ -481,6 +432,7 @@ export default function TimeBlockModal({
     timeDropdownContainer: {
       flex: 1,
       position: 'relative',
+      zIndex: 1,
     },
     timeDropdownButton: {
       backgroundColor: colors.background,
@@ -511,6 +463,7 @@ export default function TimeBlockModal({
     durationDropdownContainer: {
       position: 'relative',
       marginBottom: 20,
+      zIndex: 1,
     },
     durationDropdownButton: {
       backgroundColor: colors.background,
@@ -540,22 +493,23 @@ export default function TimeBlockModal({
       borderRadius: 12,
       borderWidth: 2,
       borderColor: colors.primary,
-      maxHeight: 200,
-      zIndex: 1000,
+      maxHeight: 160,
+      zIndex: 9999,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.3,
-      shadowRadius: 8,
-      elevation: 8,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.4,
+      shadowRadius: 12,
+      elevation: 15,
+      marginTop: 4,
     },
     dropdownScroll: {
-      maxHeight: 200,
+      maxHeight: 160,
     },
     dropdownOption: {
-      paddingVertical: 16,
+      paddingVertical: 14,
       paddingHorizontal: 20,
       borderBottomWidth: 1,
-      borderBottomColor: colors.border,
+      borderBottomColor: colors.border + '50',
     },
     dropdownOptionSelected: {
       backgroundColor: colors.primary + '20',
@@ -702,6 +656,55 @@ export default function TimeBlockModal({
     },
   });
 
+  const Dropdown = ({ 
+    visible, 
+    onClose, 
+    options, 
+    onSelect, 
+    selectedValue,
+    style = {}
+  }: {
+    visible: boolean;
+    onClose: () => void;
+    options: any[];
+    onSelect: (value: any) => void;
+    selectedValue: any;
+    style?: any;
+  }) => {
+    if (!visible) return null;
+
+    return (
+      <View style={[styles.dropdown, style]}>
+        <ScrollView style={styles.dropdownScroll} showsVerticalScrollIndicator={false}>
+          {options.map((option, index) => {
+            const value = typeof option === 'object' ? option.value : option;
+            const label = typeof option === 'object' ? option.label : option.toString().padStart(2, '0');
+            const isSelected = selectedValue === value;
+            
+            return (
+              <TouchableOpacity
+                key={index}
+                style={[styles.dropdownOption, isSelected && styles.dropdownOptionSelected]}
+                onPress={() => {
+                  onSelect(value);
+                  onClose();
+                }}
+                activeOpacity={0.7}
+              >
+                <Text style={[
+                  styles.dropdownOptionText,
+                  isSelected && styles.dropdownOptionTextSelected
+                ]}>
+                  {label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+      </View>
+    );
+  };
+
   return (
     <Modal
       visible={visible}
@@ -813,7 +816,7 @@ export default function TimeBlockModal({
                 </View>
               </View>
 
-              {/* 3. Duration Section - REDESIGNED WITH DROPDOWNS */}
+              {/* 3. Duration Section - FIXED DROPDOWNS */}
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
@@ -826,7 +829,7 @@ export default function TimeBlockModal({
                 </View>
                 
                 <View style={styles.durationContainer}>
-                  {/* Start Time Selection with Dropdowns */}
+                  {/* Start Time Selection with Fixed Dropdowns */}
                   <View style={styles.timeRow}>
                     {/* Hour Dropdown */}
                     <View style={styles.timeDropdownContainer}>
