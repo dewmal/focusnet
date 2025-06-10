@@ -290,7 +290,7 @@ export default function TimeBlockModal({
       <Modal
         visible={showTimePickerModal}
         transparent
-        animationType="fade"
+        animationType="slide"
         onRequestClose={() => setShowTimePickerModal(false)}
       >
         <View style={styles.timePickerModalOverlay}>
@@ -320,6 +320,7 @@ export default function TimeBlockModal({
                 <TouchableOpacity 
                   style={styles.timePickerButton}
                   onPress={() => adjustTime('hour', 'up')}
+                  activeOpacity={0.7}
                 >
                   <ChevronUp size={20} color={colors.primary} />
                 </TouchableOpacity>
@@ -331,12 +332,15 @@ export default function TimeBlockModal({
                 <TouchableOpacity 
                   style={styles.timePickerButton}
                   onPress={() => adjustTime('hour', 'down')}
+                  activeOpacity={0.7}
                 >
                   <ChevronDown size={20} color={colors.primary} />
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.timePickerSeparator}>:</Text>
+              <View style={styles.timePickerSeparatorContainer}>
+                <Text style={styles.timePickerSeparator}>:</Text>
+              </View>
 
               {/* Minute Control */}
               <View style={styles.timePickerColumn}>
@@ -344,6 +348,7 @@ export default function TimeBlockModal({
                 <TouchableOpacity 
                   style={styles.timePickerButton}
                   onPress={() => adjustTime('minute', 'up')}
+                  activeOpacity={0.7}
                 >
                   <ChevronUp size={20} color={colors.primary} />
                 </TouchableOpacity>
@@ -355,6 +360,7 @@ export default function TimeBlockModal({
                 <TouchableOpacity 
                   style={styles.timePickerButton}
                   onPress={() => adjustTime('minute', 'down')}
+                  activeOpacity={0.7}
                 >
                   <ChevronDown size={20} color={colors.primary} />
                 </TouchableOpacity>
@@ -363,18 +369,53 @@ export default function TimeBlockModal({
               {/* Period Control */}
               <View style={styles.timePickerColumn}>
                 <Text style={styles.timePickerColumnLabel}>Period</Text>
-                <TouchableOpacity 
-                  style={[styles.timePickerPeriodButton, { backgroundColor: colors.primary }]}
-                  onPress={togglePeriod}
-                >
-                  <Text style={styles.timePickerPeriodText}>{currentPeriod}</Text>
-                </TouchableOpacity>
+                <View style={styles.timePickerPeriodContainer}>
+                  <TouchableOpacity 
+                    style={[
+                      styles.timePickerPeriodButton,
+                      currentPeriod === 'AM' && styles.timePickerPeriodButtonActive
+                    ]}
+                    onPress={() => {
+                      if (timePickerType === 'start') {
+                        setStartPeriod('AM');
+                      } else {
+                        setEndPeriod('AM');
+                      }
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[
+                      styles.timePickerPeriodText,
+                      currentPeriod === 'AM' && styles.timePickerPeriodTextActive
+                    ]}>AM</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[
+                      styles.timePickerPeriodButton,
+                      currentPeriod === 'PM' && styles.timePickerPeriodButtonActive
+                    ]}
+                    onPress={() => {
+                      if (timePickerType === 'start') {
+                        setStartPeriod('PM');
+                      } else {
+                        setEndPeriod('PM');
+                      }
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={[
+                      styles.timePickerPeriodText,
+                      currentPeriod === 'PM' && styles.timePickerPeriodTextActive
+                    ]}>PM</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
 
             <TouchableOpacity
               style={[styles.timePickerConfirmButton, { backgroundColor: colors.primary }]}
               onPress={() => setShowTimePickerModal(false)}
+              activeOpacity={0.8}
             >
               <Text style={styles.timePickerConfirmText}>Confirm</Text>
             </TouchableOpacity>
@@ -714,21 +755,20 @@ export default function TimeBlockModal({
     saveButtonText: {
       color: 'white',
     },
-    // Time Picker Modal Styles
+    // Time Picker Modal Styles - REDESIGNED
     timePickerModalOverlay: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.7)',
-      justifyContent: 'center',
-      alignItems: 'center',
+      backgroundColor: 'rgba(0, 0, 0, 0.8)',
+      justifyContent: 'flex-end',
     },
     timePickerModalContent: {
       backgroundColor: colors.surface,
-      borderRadius: 20,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
       padding: 24,
-      width: '85%',
-      maxWidth: 400,
+      paddingBottom: 40,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 10 },
+      shadowOffset: { width: 0, height: -10 },
       shadowOpacity: 0.3,
       shadowRadius: 20,
       elevation: 10,
@@ -755,83 +795,112 @@ export default function TimeBlockModal({
     timePickerDisplay: {
       alignItems: 'center',
       marginBottom: 32,
-      paddingVertical: 20,
+      paddingVertical: 24,
       backgroundColor: colors.background,
-      borderRadius: 16,
+      borderRadius: 20,
+      borderWidth: 2,
+      borderColor: colors.primary + '30',
     },
     timePickerDisplayText: {
-      fontSize: 36,
+      fontSize: 42,
       fontWeight: '700',
       color: colors.primary,
+      letterSpacing: 2,
     },
     timePickerControls: {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
-      gap: 20,
+      justifyContent: 'space-between',
       marginBottom: 32,
+      paddingHorizontal: 20,
     },
     timePickerColumn: {
       alignItems: 'center',
-      gap: 8,
+      flex: 1,
     },
     timePickerColumnLabel: {
       fontSize: 12,
       fontWeight: '600',
       color: colors.textSecondary,
-      marginBottom: 8,
+      marginBottom: 16,
+      textTransform: 'uppercase',
+      letterSpacing: 1,
     },
     timePickerButton: {
-      width: 44,
-      height: 44,
-      borderRadius: 22,
+      width: 48,
+      height: 48,
+      borderRadius: 24,
       backgroundColor: colors.background,
       alignItems: 'center',
       justifyContent: 'center',
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: colors.border,
+      marginBottom: 8,
     },
     timePickerValue: {
-      paddingVertical: 16,
-      paddingHorizontal: 20,
+      paddingVertical: 20,
+      paddingHorizontal: 16,
       backgroundColor: colors.background,
-      borderRadius: 12,
-      borderWidth: 2,
+      borderRadius: 16,
+      borderWidth: 3,
       borderColor: colors.primary,
-      minWidth: 60,
+      minWidth: 70,
       alignItems: 'center',
+      marginVertical: 8,
     },
     timePickerValueText: {
-      fontSize: 24,
+      fontSize: 28,
       fontWeight: '700',
       color: colors.text,
     },
+    timePickerSeparatorContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 60,
+    },
     timePickerSeparator: {
-      fontSize: 32,
+      fontSize: 36,
       fontWeight: '700',
       color: colors.textSecondary,
-      marginTop: 40,
+    },
+    timePickerPeriodContainer: {
+      gap: 8,
+      marginTop: 16,
     },
     timePickerPeriodButton: {
-      paddingVertical: 16,
+      paddingVertical: 12,
       paddingHorizontal: 20,
       borderRadius: 12,
+      backgroundColor: colors.background,
+      borderWidth: 2,
+      borderColor: colors.border,
       alignItems: 'center',
       minWidth: 60,
-      marginTop: 52,
+    },
+    timePickerPeriodButtonActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
     },
     timePickerPeriodText: {
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: '700',
+      color: colors.text,
+    },
+    timePickerPeriodTextActive: {
       color: 'white',
     },
     timePickerConfirmButton: {
-      paddingVertical: 16,
-      borderRadius: 12,
+      paddingVertical: 18,
+      borderRadius: 16,
       alignItems: 'center',
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 4,
     },
     timePickerConfirmText: {
-      fontSize: 16,
+      fontSize: 18,
       fontWeight: '700',
       color: 'white',
     },
@@ -957,6 +1026,7 @@ export default function TimeBlockModal({
                     <TouchableOpacity 
                       style={styles.timeButton}
                       onPress={() => openTimePicker('start')}
+                      activeOpacity={0.7}
                     >
                       <Text style={styles.timeButtonLabel}>Start Time</Text>
                       <Text style={styles.timeButtonValue}>
@@ -969,6 +1039,7 @@ export default function TimeBlockModal({
                     <TouchableOpacity 
                       style={styles.timeButton}
                       onPress={() => openTimePicker('end')}
+                      activeOpacity={0.7}
                     >
                       <Text style={styles.timeButtonLabel}>End Time</Text>
                       <Text style={styles.timeButtonValue}>
@@ -1014,6 +1085,7 @@ export default function TimeBlockModal({
                           setErrors(newErrors);
                         }
                       }}
+                      activeOpacity={0.7}
                     >
                       <View
                         style={[styles.categoryDot, { backgroundColor: category.color }]}
@@ -1052,6 +1124,7 @@ export default function TimeBlockModal({
                         customColor === color && styles.colorOptionSelected,
                       ]}
                       onPress={() => setCustomColor(color)}
+                      activeOpacity={0.7}
                     >
                       <View
                         style={[styles.colorPreview, { backgroundColor: color }]}
@@ -1068,6 +1141,7 @@ export default function TimeBlockModal({
             <TouchableOpacity
               style={[styles.footerButton, styles.cancelButton]}
               onPress={onClose}
+              activeOpacity={0.7}
             >
               <Text style={[styles.buttonText, styles.cancelButtonText]}>Cancel</Text>
             </TouchableOpacity>
@@ -1079,6 +1153,7 @@ export default function TimeBlockModal({
               ]}
               onPress={handleSave}
               disabled={isLoading}
+              activeOpacity={0.8}
             >
               {isLoading ? (
                 <Text style={[styles.buttonText, styles.saveButtonText]}>Saving...</Text>
