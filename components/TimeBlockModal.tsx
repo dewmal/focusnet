@@ -615,7 +615,64 @@ export default function TimeBlockModal({
                 {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
               </View>
 
-              {/* Time Section */}
+              {/* Tasks Section - NOW AFTER TITLE */}
+              <View style={styles.tasksSection}>
+                <View style={styles.sectionTitle}>
+                  <CheckSquare size={16} color={colors.primary} />
+                  <Text style={styles.sectionTitle}>Tasks</Text>
+                </View>
+                
+                {/* Add Task Input */}
+                <View style={styles.taskInputContainer}>
+                  <TextInput
+                    style={[
+                      styles.taskInput,
+                      newTask.length > 0 && styles.taskInputFocused
+                    ]}
+                    value={newTask}
+                    onChangeText={setNewTask}
+                    placeholder="Add a task..."
+                    placeholderTextColor={colors.textSecondary}
+                    maxLength={100}
+                    onSubmitEditing={handleAddTask}
+                    returnKeyType="done"
+                  />
+                  <TouchableOpacity
+                    style={[
+                      styles.addTaskButton,
+                      !newTask.trim() && styles.addTaskButtonDisabled
+                    ]}
+                    onPress={handleAddTask}
+                    disabled={!newTask.trim()}
+                  >
+                    <Plus size={20} color="white" />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Tasks List */}
+                <View style={styles.tasksList}>
+                  {tasks.length > 0 ? (
+                    tasks.map((task, index) => (
+                      <View key={index} style={styles.taskItem}>
+                        <Square size={16} color={colors.textSecondary} />
+                        <Text style={styles.taskText}>{task}</Text>
+                        <TouchableOpacity
+                          style={styles.removeTaskButton}
+                          onPress={() => handleRemoveTask(index)}
+                        >
+                          <Trash2 size={16} color={colors.error} />
+                        </TouchableOpacity>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={styles.emptyTasksText}>
+                      No tasks added yet. Add tasks to break down your work.
+                    </Text>
+                  )}
+                </View>
+              </View>
+
+              {/* Time Section - WITH DURATION DISPLAY */}
               <View style={styles.section}>
                 <View style={styles.sectionTitle}>
                   <Clock size={16} color={colors.primary} />
@@ -720,63 +777,6 @@ export default function TimeBlockModal({
                       onPress={() => setCustomColor(color)}
                     />
                   ))}
-                </View>
-              </View>
-
-              {/* Tasks Section - REDESIGNED */}
-              <View style={styles.tasksSection}>
-                <View style={styles.sectionTitle}>
-                  <CheckSquare size={16} color={colors.primary} />
-                  <Text style={styles.sectionTitle}>Tasks</Text>
-                </View>
-                
-                {/* Add Task Input */}
-                <View style={styles.taskInputContainer}>
-                  <TextInput
-                    style={[
-                      styles.taskInput,
-                      newTask.length > 0 && styles.taskInputFocused
-                    ]}
-                    value={newTask}
-                    onChangeText={setNewTask}
-                    placeholder="Add a task..."
-                    placeholderTextColor={colors.textSecondary}
-                    maxLength={100}
-                    onSubmitEditing={handleAddTask}
-                    returnKeyType="done"
-                  />
-                  <TouchableOpacity
-                    style={[
-                      styles.addTaskButton,
-                      !newTask.trim() && styles.addTaskButtonDisabled
-                    ]}
-                    onPress={handleAddTask}
-                    disabled={!newTask.trim()}
-                  >
-                    <Plus size={20} color="white" />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Tasks List */}
-                <View style={styles.tasksList}>
-                  {tasks.length > 0 ? (
-                    tasks.map((task, index) => (
-                      <View key={index} style={styles.taskItem}>
-                        <Square size={16} color={colors.textSecondary} />
-                        <Text style={styles.taskText}>{task}</Text>
-                        <TouchableOpacity
-                          style={styles.removeTaskButton}
-                          onPress={() => handleRemoveTask(index)}
-                        >
-                          <Trash2 size={16} color={colors.error} />
-                        </TouchableOpacity>
-                      </View>
-                    ))
-                  ) : (
-                    <Text style={styles.emptyTasksText}>
-                      No tasks added yet. Add tasks to break down your work.
-                    </Text>
-                  )}
                 </View>
               </View>
             </View>
