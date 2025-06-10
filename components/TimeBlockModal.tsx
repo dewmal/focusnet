@@ -189,7 +189,7 @@ export default function TimeBlockModal({
     const minutes = (end.getTime() - start.getTime()) / (1000 * 60);
     
     if (minutes < 60) {
-      return `${minutes} min`;
+      return `${minutes}m`;
     } else {
       const hours = Math.floor(minutes / 60);
       const remainingMinutes = minutes % 60;
@@ -207,98 +207,103 @@ export default function TimeBlockModal({
   const styles = StyleSheet.create({
     modal: {
       flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.6)',
+      backgroundColor: 'rgba(0, 0, 0, 0.7)',
       justifyContent: 'center',
       alignItems: 'center',
     },
     modalContent: {
       backgroundColor: colors.surface,
       borderRadius: 24,
-      width: '92%',
-      maxHeight: screenHeight * 0.9,
-      maxWidth: 500,
+      width: '94%',
+      maxHeight: screenHeight * 0.92,
+      maxWidth: 520,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: 0.25,
-      shadowRadius: 20,
-      elevation: 10,
+      shadowOffset: { width: 0, height: 20 },
+      shadowOpacity: 0.3,
+      shadowRadius: 30,
+      elevation: 15,
     },
     header: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
       padding: 24,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
-      backgroundColor: colors.primary + '08',
+      backgroundColor: colors.background + '80',
       borderTopLeftRadius: 24,
       borderTopRightRadius: 24,
     },
+    headerRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'flex-start',
+    },
+    headerContent: {
+      flex: 1,
+      marginRight: 16,
+    },
     headerTitle: {
-      fontSize: 22,
-      fontWeight: '700',
+      fontSize: 24,
+      fontWeight: '800',
       color: colors.text,
+      marginBottom: 4,
     },
     headerSubtitle: {
       fontSize: 14,
       color: colors.textSecondary,
-      marginTop: 2,
+      fontWeight: '500',
     },
     closeButton: {
-      padding: 12,
+      width: 40,
+      height: 40,
       borderRadius: 20,
       backgroundColor: colors.background,
+      alignItems: 'center',
+      justifyContent: 'center',
       borderWidth: 1,
       borderColor: colors.border,
     },
     scrollView: {
-      maxHeight: screenHeight * 0.6,
+      maxHeight: screenHeight * 0.55,
     },
     content: {
       padding: 24,
     },
     section: {
-      marginBottom: 28,
+      marginBottom: 32,
     },
     sectionHeader: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 16,
-      gap: 10,
+      marginBottom: 20,
+      gap: 12,
     },
     sectionIcon: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
       alignItems: 'center',
       justifyContent: 'center',
+    },
+    sectionContent: {
+      flex: 1,
     },
     sectionTitle: {
       fontSize: 18,
       fontWeight: '700',
       color: colors.text,
+      marginBottom: 2,
     },
     sectionDescription: {
       fontSize: 13,
       color: colors.textSecondary,
-      marginTop: 2,
-    },
-    inputContainer: {
-      marginBottom: 16,
-    },
-    inputLabel: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: colors.text,
-      marginBottom: 8,
+      fontWeight: '500',
     },
     titleInput: {
       backgroundColor: colors.background,
       borderWidth: 2,
       borderColor: colors.border,
       borderRadius: 16,
-      padding: 18,
-      fontSize: 16,
+      padding: 20,
+      fontSize: 18,
       color: colors.text,
       fontWeight: '600',
     },
@@ -312,15 +317,16 @@ export default function TimeBlockModal({
     errorText: {
       fontSize: 12,
       color: colors.error,
-      marginTop: 6,
+      marginTop: 8,
       marginLeft: 4,
+      fontWeight: '500',
     },
     timeContainer: {
-      gap: 16,
+      gap: 20,
     },
     timeRow: {
       flexDirection: 'row',
-      gap: 12,
+      gap: 16,
       alignItems: 'flex-end',
     },
     timePickerContainer: {
@@ -328,54 +334,55 @@ export default function TimeBlockModal({
     },
     durationCard: {
       backgroundColor: colors.primary + '15',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderRadius: 16,
+      paddingHorizontal: 20,
+      paddingVertical: 16,
+      borderRadius: 20,
       alignItems: 'center',
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: colors.primary + '30',
-      minWidth: 80,
+      minWidth: 90,
     },
     durationLabel: {
       fontSize: 11,
-      fontWeight: '600',
+      fontWeight: '700',
       color: colors.primary,
-      marginBottom: 2,
+      marginBottom: 4,
+      letterSpacing: 0.5,
     },
     durationText: {
-      fontSize: 16,
-      fontWeight: '700',
+      fontSize: 18,
+      fontWeight: '800',
       color: colors.primary,
     },
     timePreview: {
       backgroundColor: colors.background,
-      padding: 16,
-      borderRadius: 12,
-      marginTop: 12,
+      padding: 20,
+      borderRadius: 16,
       borderWidth: 1,
       borderColor: colors.border,
+      alignItems: 'center',
     },
     timePreviewText: {
-      fontSize: 14,
-      color: colors.textSecondary,
-      textAlign: 'center',
+      fontSize: 16,
+      color: colors.text,
+      fontWeight: '600',
     },
     categoriesGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: 10,
+      gap: 12,
     },
     categoryChip: {
       flexDirection: 'row',
       alignItems: 'center',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderRadius: 20,
+      paddingHorizontal: 20,
+      paddingVertical: 14,
+      borderRadius: 24,
       borderWidth: 2,
       borderColor: colors.border,
       backgroundColor: colors.background,
-      gap: 8,
-      minWidth: 100,
+      gap: 10,
+      minWidth: 120,
     },
     categoryChipSelected: {
       borderColor: colors.primary,
@@ -383,9 +390,9 @@ export default function TimeBlockModal({
       transform: [{ scale: 1.02 }],
     },
     categoryDot: {
-      width: 10,
-      height: 10,
-      borderRadius: 5,
+      width: 12,
+      height: 12,
+      borderRadius: 6,
     },
     categoryText: {
       fontSize: 14,
@@ -397,39 +404,39 @@ export default function TimeBlockModal({
       fontWeight: '700',
     },
     colorsSection: {
-      marginTop: 16,
+      marginTop: 20,
     },
     colorsGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      gap: 12,
-      marginTop: 12,
+      gap: 16,
+      marginTop: 16,
     },
     colorOption: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      width: 52,
+      height: 52,
+      borderRadius: 26,
       borderWidth: 3,
       borderColor: 'transparent',
       alignItems: 'center',
       justifyContent: 'center',
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 2,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 4,
     },
     colorOptionSelected: {
       borderColor: colors.text,
-      transform: [{ scale: 1.1 }],
+      transform: [{ scale: 1.15 }],
     },
     colorPreview: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
+      width: 40,
+      height: 40,
+      borderRadius: 20,
     },
     tasksContainer: {
-      gap: 12,
+      gap: 16,
     },
     taskRow: {
       flexDirection: 'row',
@@ -441,41 +448,42 @@ export default function TimeBlockModal({
       backgroundColor: colors.background,
       borderWidth: 2,
       borderColor: colors.border,
-      borderRadius: 12,
-      padding: 14,
+      borderRadius: 16,
+      padding: 16,
       fontSize: 14,
       color: colors.text,
+      fontWeight: '500',
     },
     taskInputFocused: {
       borderColor: colors.primary,
     },
     taskButton: {
-      width: 40,
-      height: 40,
-      borderRadius: 20,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
       alignItems: 'center',
       justifyContent: 'center',
     },
     addTaskButton: {
       backgroundColor: colors.primary + '20',
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: colors.primary + '40',
     },
     removeTaskButton: {
       backgroundColor: colors.error + '20',
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: colors.error + '40',
     },
     addTaskRow: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      paddingVertical: 16,
+      paddingVertical: 20,
       borderWidth: 2,
       borderColor: colors.border,
       borderStyle: 'dashed',
-      borderRadius: 12,
-      gap: 8,
+      borderRadius: 16,
+      gap: 10,
       backgroundColor: colors.background + '50',
     },
     addTaskText: {
@@ -495,17 +503,17 @@ export default function TimeBlockModal({
     },
     footerButton: {
       flex: 1,
-      paddingVertical: 18,
-      borderRadius: 16,
+      paddingVertical: 20,
+      borderRadius: 20,
       alignItems: 'center',
       flexDirection: 'row',
       justifyContent: 'center',
-      gap: 8,
+      gap: 10,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 2,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 4,
     },
     cancelButton: {
       backgroundColor: colors.surface,
@@ -531,22 +539,23 @@ export default function TimeBlockModal({
     },
     validationSummary: {
       backgroundColor: colors.error + '10',
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: colors.error + '30',
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 20,
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 24,
     },
     validationTitle: {
       fontSize: 14,
       fontWeight: '700',
       color: colors.error,
-      marginBottom: 8,
+      marginBottom: 12,
     },
     validationItem: {
       fontSize: 12,
       color: colors.error,
-      marginBottom: 4,
+      marginBottom: 6,
+      fontWeight: '500',
     },
   });
 
@@ -563,17 +572,19 @@ export default function TimeBlockModal({
         <View style={styles.modalContent}>
           {/* Header */}
           <View style={styles.header}>
-            <View>
-              <Text style={styles.headerTitle}>
-                {editingBlock ? 'Edit Time Block' : 'Create Time Block'}
-              </Text>
-              <Text style={styles.headerSubtitle}>
-                {editingBlock ? 'Modify your existing block' : 'Plan your focused work session'}
-              </Text>
+            <View style={styles.headerRow}>
+              <View style={styles.headerContent}>
+                <Text style={styles.headerTitle}>
+                  {editingBlock ? 'Edit Time Block' : 'Create Time Block'}
+                </Text>
+                <Text style={styles.headerSubtitle}>
+                  {editingBlock ? 'Modify your existing block' : 'Plan your focused work session'}
+                </Text>
+              </View>
+              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                <X size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <X size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
           </View>
 
           {/* Content */}
@@ -598,43 +609,41 @@ export default function TimeBlockModal({
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '20' }]}>
-                    <Target size={16} color={colors.primary} />
+                    <Target size={18} color={colors.primary} />
                   </View>
-                  <View>
+                  <View style={styles.sectionContent}>
                     <Text style={styles.sectionTitle}>Block Title</Text>
                     <Text style={styles.sectionDescription}>What will you focus on?</Text>
                   </View>
                 </View>
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={[
-                      styles.titleInput,
-                      errors.title && styles.titleInputError
-                    ]}
-                    value={title}
-                    onChangeText={(text) => {
-                      setTitle(text);
-                      if (errors.title) {
-                        const newErrors = { ...errors };
-                        delete newErrors.title;
-                        setErrors(newErrors);
-                      }
-                    }}
-                    placeholder="Enter a descriptive title..."
-                    placeholderTextColor={colors.textSecondary}
-                    maxLength={50}
-                  />
-                  {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
-                </View>
+                <TextInput
+                  style={[
+                    styles.titleInput,
+                    errors.title && styles.titleInputError
+                  ]}
+                  value={title}
+                  onChangeText={(text) => {
+                    setTitle(text);
+                    if (errors.title) {
+                      const newErrors = { ...errors };
+                      delete newErrors.title;
+                      setErrors(newErrors);
+                    }
+                  }}
+                  placeholder="Enter a descriptive title..."
+                  placeholderTextColor={colors.textSecondary}
+                  maxLength={50}
+                />
+                {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
               </View>
 
               {/* Time Section */}
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <View style={[styles.sectionIcon, { backgroundColor: colors.secondary + '20' }]}>
-                    <Clock size={16} color={colors.secondary} />
+                    <Clock size={18} color={colors.secondary} />
                   </View>
-                  <View>
+                  <View style={styles.sectionContent}>
                     <Text style={styles.sectionTitle}>Time & Duration</Text>
                     <Text style={styles.sectionDescription}>When will this happen?</Text>
                   </View>
@@ -687,9 +696,9 @@ export default function TimeBlockModal({
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <View style={[styles.sectionIcon, { backgroundColor: colors.accent + '20' }]}>
-                    <Tag size={16} color={colors.accent} />
+                    <Tag size={18} color={colors.accent} />
                   </View>
-                  <View>
+                  <View style={styles.sectionContent}>
                     <Text style={styles.sectionTitle}>Category</Text>
                     <Text style={styles.sectionDescription}>What type of work is this?</Text>
                   </View>
@@ -730,7 +739,7 @@ export default function TimeBlockModal({
 
                 {/* Color Customization */}
                 <View style={styles.colorsSection}>
-                  <Text style={styles.inputLabel}>Custom Color</Text>
+                  <Text style={styles.sectionTitle}>Custom Color</Text>
                   <View style={styles.colorsGrid}>
                     {predefinedColors.map((color) => (
                       <TouchableOpacity
@@ -754,9 +763,9 @@ export default function TimeBlockModal({
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <View style={[styles.sectionIcon, { backgroundColor: colors.success + '20' }]}>
-                    <Calendar size={16} color={colors.success} />
+                    <Calendar size={18} color={colors.success} />
                   </View>
-                  <View>
+                  <View style={styles.sectionContent}>
                     <Text style={styles.sectionTitle}>Tasks</Text>
                     <Text style={styles.sectionDescription}>What specific tasks will you complete?</Text>
                   </View>
