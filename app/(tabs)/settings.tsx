@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Switch, TextInput, Alert } from 'react-native';
-import { Palette, Bell, User, Moon, Sun, Plus, Trash2, CreditCard as Edit } from 'lucide-react-native';
+import { Palette, Bell, User, Moon, Sun, Plus, Trash2, Edit } from 'lucide-react-native';
 import { loadCategories, saveCategories, BlockCategory, loadSettings, saveSettings, AppSettings, resetAllData } from '@/utils/storage';
 import { useTheme } from '@/contexts/ThemeContext';
 import ClockTimePicker from '@/components/ClockTimePicker';
