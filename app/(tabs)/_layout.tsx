@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Calendar, Focus, Clock, Settings, BookOpen, Chrome as Home } from 'lucide-react-native';
+import { Calendar, Focus, Clock, Settings, BookOpen, Chrome as Home, Plus } from 'lucide-react-native';
 
 export default function TabLayout() {
   return (
@@ -27,6 +27,15 @@ export default function TabLayout() {
           title: 'Today',
           tabBarIcon: ({ size, color }) => (
             <Home size={size} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="create-block"
+        options={{
+          title: 'Create',
+          tabBarIcon: ({ size, color }) => (
+            <Plus size={size} color={color} />
           ),
         }}
       />

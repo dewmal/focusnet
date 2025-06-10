@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
 import { Plus, Calendar, TrendingUp } from 'lucide-react-native';
+import { router } from 'expo-router';
 import TimeBlock, { TimeBlockData } from '@/components/TimeBlock';
-import TimeBlockModal from '@/components/TimeBlockModal';
 import MobileHeader from '@/components/MobileHeader';
 import { loadTimeBlocks, saveTimeBlocks } from '@/utils/storage';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -11,8 +11,6 @@ export default function TodayScreen() {
   const [blocks, setBlocks] = useState<TimeBlockData[]>([]);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingBlock, setEditingBlock] = useState<TimeBlockData | null>(null);
   const { colors } = useTheme();
 
   useEffect(() => {
@@ -24,14 +22,22 @@ export default function TodayScreen() {
     return () => clearInterval(timer);
   }, []);
 
+  // Reload data when screen comes into focus
+  useEffect(() => {
+    const unsubscribe = router.subscribe(() => {
+      loadData();
+    });
+    return unsubscribe;
+  }, []);
+
   const loadData = async () => {
     const savedBlocks = await loadTimeBlocks();
     setBlocks(savedBlocks);
   };
 
   const handleBlockPress = (block: TimeBlockData) => {
-    setEditingBlock(block);
-    setIsModalVisible(true);
+    // Navigate to edit screen (we can implement this later)
+    Alert.alert('Edit Block', `Edit "${block.title}" functionality coming soon!`);
   };
 
   const handleStartFocus = (block: TimeBlockData) => {
@@ -44,29 +50,6 @@ export default function TodayScreen() {
     );
     setBlocks(updatedBlocks);
     saveTimeBlocks(updatedBlocks);
-  };
-
-  const handleSaveBlock = async (blockData: TimeBlockData) => {
-    try {
-      let updatedBlocks;
-      
-      if (editingBlock) {
-        // Update existing block
-        updatedBlocks = blocks.map(b => 
-          b.id === blockData.id ? blockData : b
-        );
-      } else {
-        // Add new block
-        updatedBlocks = [...blocks, blockData];
-      }
-      
-      setBlocks(updatedBlocks);
-      await saveTimeBlocks(updatedBlocks);
-      setEditingBlock(null);
-    } catch (error) {
-      console.error('Error saving block:', error);
-      throw error;
-    }
   };
 
   const handleAddQuickBlock = () => {
@@ -147,15 +130,11 @@ export default function TodayScreen() {
   };
 
   const handleAddButtonPress = () => {
-    console.log('Add button pressed - opening modal');
-    setEditingBlock(null);
-    setIsModalVisible(true);
+    router.push('/create-block');
   };
 
   const handleCreateCustomBlock = () => {
-    console.log('Creating custom block');
-    setEditingBlock(null);
-    setIsModalVisible(true);
+    router.push('/create-block');
   };
 
   const handleNotificationsPress = () => {
@@ -417,18 +396,6 @@ export default function TodayScreen() {
           </View>
         </View>
       </ScrollView>
-
-      {/* Time Block Modal */}
-      <TimeBlockModal
-        visible={isModalVisible}
-        onClose={() => {
-          console.log('Modal closing');
-          setIsModalVisible(false);
-          setEditingBlock(null);
-        }}
-        onSave={handleSaveBlock}
-        editingBlock={editingBlock}
-      />
     </SafeAreaView>
   );
 }
