@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { ArrowLeft, Coffee, Zap, CheckCircle, Clock, TrendingUp, Target } from 'lucide-react-native';
+import { ArrowLeft, Coffee, Zap, CircleCheck as CheckCircle, Clock, TrendingUp, Target } from 'lucide-react-native';
 import FocusTimer from '@/components/FocusTimer';
 import { loadTimeBlocks, saveTimeBlocks } from '@/utils/storage';
 import { TimeBlockData } from '@/components/TimeBlock';
