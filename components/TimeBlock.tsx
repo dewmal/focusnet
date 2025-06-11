@@ -61,25 +61,38 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
     if (event.nativeEvent.oldState === State.ACTIVE) {
       const { translationX } = event.nativeEvent;
       
-      if (translationX < -100) {
-        // Swipe left detected - show confirmation immediately
-        showDeleteConfirmation();
-        // Reset position
+      if (translationX < -80) {
+        // Swipe left enough to reveal delete button
+        setIsSwipeActive(true);
+        Animated.spring(translateX, {
+          toValue: -80,
+          useNativeDriver: false,
+          tension: 100,
+          friction: 8,
+        }).start();
+      } else if (translationX > 20) {
+        // Swipe right or small left swipe - hide delete button
+        setIsSwipeActive(false);
         Animated.spring(translateX, {
           toValue: 0,
           useNativeDriver: false,
+          tension: 100,
+          friction: 8,
         }).start();
       } else {
-        // Reset position for small swipes
+        // Small movement - return to original position
+        setIsSwipeActive(false);
         Animated.spring(translateX, {
           toValue: 0,
           useNativeDriver: false,
+          tension: 100,
+          friction: 8,
         }).start();
       }
     }
   };
 
-  const showDeleteConfirmation = () => {
+  const handleDelete = () => {
     if (!onDelete) {
       Alert.alert('Error', 'Delete function not available');
       return;
@@ -91,7 +104,17 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
       [
         { 
           text: 'Cancel', 
-          style: 'cancel'
+          style: 'cancel',
+          onPress: () => {
+            // Reset swipe position when cancelled
+            setIsSwipeActive(false);
+            Animated.spring(translateX, {
+              toValue: 0,
+              useNativeDriver: false,
+              tension: 100,
+              friction: 8,
+            }).start();
+          }
         },
         {
           text: 'Delete',
@@ -105,17 +128,34 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
   };
 
   const handleBlockPress = () => {
-    onPress();
+    if (isSwipeActive) {
+      // If swipe is active, tapping should close the swipe
+      setIsSwipeActive(false);
+      Animated.spring(translateX, {
+        toValue: 0,
+        useNativeDriver: false,
+        tension: 100,
+        friction: 8,
+      }).start();
+    } else {
+      onPress();
+    }
   };
 
   const handleStartFocus = () => {
-    onStartFocus();
+    if (!isSwipeActive) {
+      onStartFocus();
+    }
   };
 
   const styles = StyleSheet.create({
     container: {
       marginVertical: 6,
       position: 'relative',
+    },
+    swipeContainer: {
+      flexDirection: 'row',
+      alignItems: 'stretch',
     },
     blockContainer: {
       backgroundColor: colors.surface,
@@ -190,61 +230,89 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
       borderRadius: 2,
       backgroundColor: block.color,
     },
+    deleteButton: {
+      backgroundColor: '#FF3B30',
+      width: 80,
+      justifyContent: 'center',
+      alignItems: 'center',
+      borderTopRightRadius: 12,
+      borderBottomRightRadius: 12,
+      marginLeft: -12,
+    },
+    deleteButtonText: {
+      color: 'white',
+      fontSize: 12,
+      fontWeight: '600',
+      marginTop: 4,
+    },
   });
 
   return (
     <View style={styles.container}>
-      <PanGestureHandler
-        onGestureEvent={onGestureEvent}
-        onHandlerStateChange={onHandlerStateChange}
-        activeOffsetX={[-10, 10]}
-      >
-        <Animated.View
-          style={[
-            styles.blockContainer,
-            { transform: [{ translateX }] }
-          ]}
+      <View style={styles.swipeContainer}>
+        <PanGestureHandler
+          onGestureEvent={onGestureEvent}
+          onHandlerStateChange={onHandlerStateChange}
+          activeOffsetX={[-10, 10]}
         >
-          <Pressable onPress={handleBlockPress}>
-            <View style={styles.header}>
-              <View style={styles.timeInfo}>
-                <Text style={styles.timeText}>
-                  {formatTime12Hour(block.startTime)} - {formatTime12Hour(block.endTime)}
-                </Text>
-                {getStatusIcon()}
+          <Animated.View
+            style={[
+              styles.blockContainer,
+              { transform: [{ translateX }] }
+            ]}
+          >
+            <Pressable onPress={handleBlockPress}>
+              <View style={styles.header}>
+                <View style={styles.timeInfo}>
+                  <Text style={styles.timeText}>
+                    {formatTime12Hour(block.startTime)} - {formatTime12Hour(block.endTime)}
+                  </Text>
+                  {getStatusIcon()}
+                </View>
+                <TouchableOpacity 
+                  style={styles.playButton}
+                  onPress={handleStartFocus}
+                >
+                  <Play size={14} color="white" />
+                </TouchableOpacity>
               </View>
-              <TouchableOpacity 
-                style={styles.playButton}
-                onPress={handleStartFocus}
-              >
-                <Play size={14} color="white" />
-              </TouchableOpacity>
-            </View>
-            
-            <Text style={styles.title}>{block.title}</Text>
-            <Text style={styles.category}>{block.category}</Text>
-            
-            {block.tasks.length > 0 && (
-              <View style={styles.tasksContainer}>
-                {block.tasks.slice(0, 2).map((task, index) => (
-                  <Text key={index} style={styles.task}>• {task}</Text>
-                ))}
-                {block.tasks.length > 2 && (
-                  <Text style={styles.moreTasks}>+{block.tasks.length - 2} more</Text>
-                )}
+              
+              <Text style={styles.title}>{block.title}</Text>
+              <Text style={styles.category}>{block.category}</Text>
+              
+              {block.tasks.length > 0 && (
+                <View style={styles.tasksContainer}>
+                  {block.tasks.slice(0, 2).map((task, index) => (
+                    <Text key={index} style={styles.task}>• {task}</Text>
+                  ))}
+                  {block.tasks.length > 2 && (
+                    <Text style={styles.moreTasks}>+{block.tasks.length - 2} more</Text>
+                  )}
+                </View>
+              )}
+              
+              <View style={styles.progressBar}>
+                <View 
+                  style={[styles.progressFill, { 
+                    width: getProgressWidth(),
+                  }]} 
+                />
               </View>
-            )}
-            
-            <View style={styles.progressBar}>
-              <View 
-                style={[styles.progressFill, { 
-                  width: getProgressWidth(),
-                }]} 
-              />
-            </View>
-          </Pressable>
-        </Animated.View>
-      </PanGestureHandler>
+            </Pressable>
+          </Animated.View>
+        </PanGestureHandler>
+
+        {isSwipeActive && (
+          <TouchableOpacity 
+            style={styles.deleteButton}
+            onPress={handleDelete}
+            activeOpacity={0.8}
+          >
+            <Trash2 size={20} color="white" />
+            <Text style={styles.deleteButtonText}>Delete</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 }
