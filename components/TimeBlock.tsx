@@ -47,9 +47,9 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
   };
 
   const getProgressWidth = () => {
-    if (block.isCompleted) return 100;
-    if (block.progress) return block.progress;
-    return 0;
+    if (block.isCompleted) return '100%';
+    if (block.progress) return `${block.progress}%`;
+    return '0%';
   };
 
   const onGestureEvent = Animated.event(
@@ -80,24 +80,40 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
   };
 
   const handleDelete = () => {
+    if (!onDelete) {
+      Alert.alert('Error', 'Delete function not available');
+      return;
+    }
+
     Alert.alert(
       'Delete Time Block',
       `Are you sure you want to delete "${block.title}"?`,
       [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
+        { 
+          text: 'Cancel', 
+          style: 'cancel',
           onPress: () => {
-            if (onDelete) {
-              onDelete(block.id);
-            }
-            // Reset swipe position
+            // Reset swipe position on cancel
             setIsSwipeActive(false);
             Animated.spring(translateX, {
               toValue: 0,
               useNativeDriver: false,
             }).start();
+          }
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            // Reset swipe position first
+            setIsSwipeActive(false);
+            Animated.spring(translateX, {
+              toValue: 0,
+              useNativeDriver: false,
+            }).start(() => {
+              // Call delete function after animation completes
+              onDelete(block.id);
+            });
           }
         }
       ]
@@ -114,6 +130,20 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
     }
   };
 
+  const handleBlockPress = () => {
+    if (isSwipeActive) {
+      resetSwipe();
+    } else {
+      onPress();
+    }
+  };
+
+  const handleStartFocus = () => {
+    if (!isSwipeActive) {
+      onStartFocus();
+    }
+  };
+
   const styles = StyleSheet.create({
     container: {
       marginVertical: 6,
@@ -121,7 +151,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
     },
     swipeContainer: {
       flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'stretch',
     },
     blockContainer: {
       backgroundColor: colors.surface,
@@ -135,6 +165,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
       shadowRadius: 4,
       elevation: 3,
       width: '100%',
+      minHeight: 120,
     },
     header: {
       flexDirection: 'row',
@@ -198,7 +229,6 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
     deleteButton: {
       backgroundColor: colors.error,
       width: 80,
-      height: '100%',
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: 12,
@@ -226,7 +256,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
               { transform: [{ translateX }] }
             ]}
           >
-            <Pressable onPress={isSwipeActive ? resetSwipe : onPress}>
+            <Pressable onPress={handleBlockPress}>
               <View style={styles.header}>
                 <View style={styles.timeInfo}>
                   <Text style={styles.timeText}>
@@ -236,7 +266,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
                 </View>
                 <TouchableOpacity 
                   style={styles.playButton}
-                  onPress={onStartFocus}
+                  onPress={handleStartFocus}
                 >
                   <Play size={14} color="white" />
                 </TouchableOpacity>
@@ -271,6 +301,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
           <TouchableOpacity 
             style={styles.deleteButton}
             onPress={handleDelete}
+            activeOpacity={0.7}
           >
             <Trash2 size={20} color="white" />
             <Text style={styles.deleteButtonText}>Delete</Text>
