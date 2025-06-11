@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Switch, TextInput, Alert } from 'react-native';
-import { Palette, Bell, User, Moon, Sun, Plus, Trash2, CreditCard as Edit, RotateCcw } from 'lucide-react-native';
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity, Switch, TextInput, Alert, Dimensions, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Palette, Bell, User, Moon, Sun, Plus, Trash2, CreditCard as Edit, RotateCcw, Database, Sparkles } from 'lucide-react-native';
 import MobileHeader from '@/components/MobileHeader';
-import { loadCategories, saveCategories, BlockCategory, loadSettings, saveSettings, AppSettings, resetAllData, debugStorage } from '@/utils/storage';
+import { loadCategories, saveCategories, BlockCategory, loadSettings, saveSettings, AppSettings, resetAllData, addSampleData, hasAnyData, debugStorage } from '@/utils/storage';
 import { useTheme } from '@/contexts/ThemeContext';
 import ClockTimePicker from '@/components/ClockTimePicker';
 
@@ -17,11 +18,16 @@ export default function SettingsScreen() {
   const [editingCategory, setEditingCategory] = useState<BlockCategory | null>(null);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isResetting, setIsResetting] = useState(false);
+  const [isAddingSample, setIsAddingSample] = useState(false);
+  const [hasExistingData, setHasExistingData] = useState(false);
 
   const { isDarkMode, toggleDarkMode, colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const screenWidth = Dimensions.get('window').width;
 
   useEffect(() => {
     loadData();
+    checkForExistingData();
   }, []);
 
   const loadData = async () => {
@@ -31,6 +37,11 @@ export default function SettingsScreen() {
     ]);
     setCategories(savedCategories);
     setSettings(savedSettings);
+  };
+
+  const checkForExistingData = async () => {
+    const dataExists = await hasAnyData();
+    setHasExistingData(dataExists);
   };
 
   const handleSettingChange = async (key: keyof AppSettings, value: any) => {
@@ -138,22 +149,22 @@ export default function SettingsScreen() {
 
   const handleResetAllData = () => {
     Alert.alert(
-      'Reset All Data',
-      'This will permanently delete all your time blocks, reflections, categories, and settings. This action cannot be undone.\n\nAre you absolutely sure?',
+      '🗑️ Reset All Data',
+      'This will permanently delete ALL your data including:\n\n• All time blocks\n• All reflections\n• All categories\n• All settings\n• Theme preferences\n\nThis action cannot be undone.\n\nAre you absolutely sure?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Reset Everything',
+          text: 'Delete Everything',
           style: 'destructive',
           onPress: async () => {
             setIsResetting(true);
             try {
-              console.log('Starting reset process...');
+              console.log('Starting complete reset process...');
               
               // Debug storage before reset
               await debugStorage();
               
-              // Perform reset
+              // Perform complete reset (no sample data)
               const success = await resetAllData();
               
               if (success) {
@@ -162,9 +173,10 @@ export default function SettingsScreen() {
                 // Force reload data after reset
                 setTimeout(async () => {
                   await loadData();
+                  await checkForExistingData();
                   Alert.alert(
-                    'Reset Complete', 
-                    'All data has been reset successfully! The app has been restored to its default state.',
+                    '✅ Reset Complete', 
+                    'All data has been permanently deleted. The app is now completely clean.',
                     [{ text: 'OK', onPress: () => console.log('Reset acknowledged') }]
                   );
                 }, 500);
@@ -176,6 +188,49 @@ export default function SettingsScreen() {
               Alert.alert('Error', 'Failed to reset data. Please try again.');
             } finally {
               setIsResetting(false);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const handleAddSampleData = () => {
+    Alert.alert(
+      '✨ Add Sample Data',
+      'This will add sample time blocks, categories, and settings to help you get started with the app.\n\nThis is useful for:\n• New users exploring features\n• Testing the app\n• Getting inspiration for your own blocks\n\nContinue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Add Sample Data',
+          onPress: async () => {
+            setIsAddingSample(true);
+            try {
+              console.log('Adding sample data...');
+              
+              const success = await addSampleData();
+              
+              if (success) {
+                console.log('Sample data added successfully');
+                
+                // Reload data after adding samples
+                setTimeout(async () => {
+                  await loadData();
+                  await checkForExistingData();
+                  Alert.alert(
+                    '🎉 Sample Data Added', 
+                    'Sample time blocks, categories, and settings have been added to your app. You can now explore all the features!',
+                    [{ text: 'Great!', onPress: () => console.log('Sample data acknowledged') }]
+                  );
+                }, 500);
+              } else {
+                Alert.alert('Error', 'Failed to add sample data. Please try again.');
+              }
+            } catch (error) {
+              console.error('Add sample data error:', error);
+              Alert.alert('Error', 'Failed to add sample data. Please try again.');
+            } finally {
+              setIsAddingSample(false);
             }
           }
         }
@@ -197,8 +252,11 @@ export default function SettingsScreen() {
       flex: 1,
     },
     content: {
-      paddingHorizontal: 20,
+      paddingHorizontal: Math.max(20, screenWidth * 0.05),
+      paddingLeft: Math.max(insets.left + 20, screenWidth * 0.05),
+      paddingRight: Math.max(insets.right + 20, screenWidth * 0.05),
       paddingTop: 16,
+      paddingBottom: Math.max(insets.bottom + 32, 32),
     },
     section: {
       backgroundColor: colors.surface,
@@ -215,7 +273,7 @@ export default function SettingsScreen() {
       gap: 8,
     },
     sectionTitle: {
-      fontSize: 18,
+      fontSize: Math.min(18, screenWidth * 0.045),
       fontWeight: '700',
       color: colors.text,
     },
@@ -224,24 +282,29 @@ export default function SettingsScreen() {
       justifyContent: 'space-between',
       alignItems: 'center',
       marginBottom: 8,
+      minHeight: 44,
     },
     settingLabel: {
       fontSize: 16,
       color: colors.text,
       fontWeight: '500',
+      flex: 1,
     },
     settingDescription: {
       fontSize: 12,
       color: colors.textSecondary,
       marginTop: 4,
+      lineHeight: 16,
     },
     durationContainer: {
       flexDirection: 'row',
       gap: 8,
       marginTop: 12,
+      flexWrap: 'wrap',
     },
     durationButton: {
       flex: 1,
+      minWidth: 60,
       paddingVertical: 12,
       paddingHorizontal: 16,
       borderRadius: 8,
@@ -249,6 +312,7 @@ export default function SettingsScreen() {
       borderWidth: 1,
       borderColor: colors.border,
       alignItems: 'center',
+      minHeight: 44,
     },
     selectedDuration: {
       backgroundColor: colors.primary,
@@ -276,6 +340,7 @@ export default function SettingsScreen() {
       padding: 12,
       fontSize: 14,
       color: colors.text,
+      minHeight: 44,
     },
     addCategoryButton: {
       backgroundColor: colors.primary,
@@ -309,11 +374,13 @@ export default function SettingsScreen() {
       justifyContent: 'space-between',
       alignItems: 'center',
       paddingVertical: 8,
+      minHeight: 44,
     },
     categoryInfo: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 12,
+      flex: 1,
     },
     categoryColor: {
       width: 16,
@@ -324,13 +391,18 @@ export default function SettingsScreen() {
       fontSize: 16,
       color: colors.text,
       fontWeight: '500',
+      flex: 1,
     },
     categoryActions: {
       flexDirection: 'row',
       gap: 12,
     },
     categoryActionButton: {
-      padding: 4,
+      padding: 8,
+      minWidth: 32,
+      minHeight: 32,
+      alignItems: 'center',
+      justifyContent: 'center',
     },
     appVersion: {
       fontSize: 14,
@@ -343,32 +415,61 @@ export default function SettingsScreen() {
       color: colors.textSecondary,
       lineHeight: 20,
     },
-    dangerButton: {
-      backgroundColor: colors.error,
-      paddingVertical: 12,
+    dataManagementSection: {
+      marginBottom: 16,
+    },
+    dataButton: {
+      paddingVertical: 14,
       borderRadius: 8,
       alignItems: 'center',
-      marginBottom: 8,
-      opacity: isResetting ? 0.6 : 1,
+      marginBottom: 12,
       flexDirection: 'row',
       justifyContent: 'center',
       gap: 8,
+      minHeight: 56,
     },
-    dangerButtonText: {
+    resetButton: {
+      backgroundColor: colors.error,
+      opacity: isResetting ? 0.6 : 1,
+    },
+    sampleDataButton: {
+      backgroundColor: colors.secondary,
+      opacity: isAddingSample ? 0.6 : 1,
+    },
+    dataButtonText: {
       color: 'white',
       fontSize: 16,
       fontWeight: '600',
     },
-    dangerDescription: {
+    dataDescription: {
       fontSize: 12,
       color: colors.textSecondary,
       textAlign: 'center',
       lineHeight: 16,
+      marginBottom: 8,
+    },
+    dataStatusContainer: {
+      backgroundColor: colors.background,
+      padding: 12,
+      borderRadius: 8,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    dataStatusText: {
+      fontSize: 13,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      fontWeight: '500',
+    },
+    dataStatusIcon: {
+      alignSelf: 'center',
+      marginBottom: 4,
     },
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* Action Bar Header */}
       <MobileHeader
         title="Settings"
@@ -534,6 +635,62 @@ export default function SettingsScreen() {
             </View>
           </View>
 
+          {/* Data Management */}
+          <View style={[styles.section, styles.dataManagementSection]}>
+            <View style={styles.sectionHeader}>
+              <Database size={20} color={colors.primary} />
+              <Text style={styles.sectionTitle}>Data Management</Text>
+            </View>
+
+            {/* Data Status */}
+            <View style={styles.dataStatusContainer}>
+              <View style={styles.dataStatusIcon}>
+                {hasExistingData ? (
+                  <Database size={16} color={colors.success} />
+                ) : (
+                  <Database size={16} color={colors.textSecondary} />
+                )}
+              </View>
+              <Text style={styles.dataStatusText}>
+                {hasExistingData 
+                  ? '✅ You have existing data in the app'
+                  : '📭 No data found - app is empty'
+                }
+              </Text>
+            </View>
+
+            {/* Add Sample Data Button */}
+            <TouchableOpacity 
+              style={[styles.dataButton, styles.sampleDataButton]}
+              onPress={handleAddSampleData}
+              disabled={isAddingSample}
+            >
+              <Sparkles size={16} color="white" />
+              <Text style={styles.dataButtonText}>
+                {isAddingSample ? 'Adding Sample Data...' : 'Add Sample Data'}
+              </Text>
+            </TouchableOpacity>
+            <Text style={styles.dataDescription}>
+              Add example time blocks, categories, and settings to explore the app's features.
+            </Text>
+
+            {/* Reset All Data Button */}
+            <TouchableOpacity 
+              style={[styles.dataButton, styles.resetButton]}
+              onPress={handleResetAllData}
+              disabled={isResetting}
+            >
+              <RotateCcw size={16} color="white" />
+              <Text style={styles.dataButtonText}>
+                {isResetting ? 'Deleting All Data...' : 'Reset All Data'}
+              </Text>
+            </TouchableOpacity>
+            <Text style={styles.dataDescription}>
+              Permanently delete all your blocks, reflections, categories, and settings.{'\n'}
+              This action cannot be undone.
+            </Text>
+          </View>
+
           {/* App Info */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>About FocusNest</Text>
@@ -542,26 +699,8 @@ export default function SettingsScreen() {
               Your personal time blocking companion for better focus and productivity.
             </Text>
           </View>
-
-          {/* Reset Data */}
-          <View style={styles.section}>
-            <TouchableOpacity 
-              style={styles.dangerButton}
-              onPress={handleResetAllData}
-              disabled={isResetting}
-            >
-              <RotateCcw size={16} color="white" />
-              <Text style={styles.dangerButtonText}>
-                {isResetting ? 'Resetting...' : 'Reset All Data'}
-              </Text>
-            </TouchableOpacity>
-            <Text style={styles.dangerDescription}>
-              This will delete all your blocks, reflections, categories, and settings.{'\n'}
-              This action cannot be undone.
-            </Text>
-          </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

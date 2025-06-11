@@ -105,12 +105,12 @@ export const saveTimeBlocks = async (blocks: TimeBlockData[]) => {
 export const loadTimeBlocks = async (): Promise<TimeBlockData[]> => {
   try {
     const blocks = await AsyncStorage.getItem(BLOCKS_KEY);
-    const loadedBlocks = blocks ? JSON.parse(blocks) : getDefaultBlocks();
+    const loadedBlocks = blocks ? JSON.parse(blocks) : [];
     // Always return sorted blocks
     return sortBlocksByDateTime(loadedBlocks);
   } catch (error) {
     console.error('Error loading time blocks:', error);
-    return sortBlocksByDateTime(getDefaultBlocks());
+    return [];
   }
 };
 
@@ -166,10 +166,10 @@ export const loadReflections = async (): Promise<DailyReflection[]> => {
   }
 };
 
-// Reset all data - ENHANCED VERSION
+// ENHANCED RESET FUNCTIONALITY - Complete data wipe
 export const resetAllData = async (): Promise<boolean> => {
   try {
-    console.log('Starting data reset...');
+    console.log('Starting complete data reset...');
     
     // Get all keys from AsyncStorage
     const allKeys = await AsyncStorage.getAllKeys();
@@ -206,15 +206,28 @@ export const resetAllData = async (): Promise<boolean> => {
       }
     }
     
-    // Reset to default data (already sorted)
+    console.log('Complete data reset successful - all data cleared');
+    return true;
+  } catch (error) {
+    console.error('Error resetting all data:', error);
+    throw error;
+  }
+};
+
+// NEW: Add sample data function
+export const addSampleData = async (): Promise<boolean> => {
+  try {
+    console.log('Adding sample data...');
+    
+    // Add sample data (already sorted)
     await saveTimeBlocks(getDefaultBlocks());
     await saveCategories(getDefaultCategories());
     await saveSettings(getDefaultSettings());
     
-    console.log('Data reset completed successfully');
+    console.log('Sample data added successfully');
     return true;
   } catch (error) {
-    console.error('Error resetting data:', error);
+    console.error('Error adding sample data:', error);
     throw error;
   }
 };
@@ -223,7 +236,6 @@ export const resetAllData = async (): Promise<boolean> => {
 export const clearTimeBlocks = async () => {
   try {
     await AsyncStorage.removeItem(BLOCKS_KEY);
-    await saveTimeBlocks(getDefaultBlocks());
   } catch (error) {
     console.error('Error clearing time blocks:', error);
   }
@@ -272,6 +284,21 @@ export const debugStorage = async () => {
   }
 };
 
+// Check if app has any data
+export const hasAnyData = async (): Promise<boolean> => {
+  try {
+    const [blocks, reflections] = await Promise.all([
+      loadTimeBlocks(),
+      loadReflections()
+    ]);
+    
+    return blocks.length > 0 || reflections.length > 0;
+  } catch (error) {
+    console.error('Error checking for data:', error);
+    return false;
+  }
+};
+
 // Default data
 const getDefaultSettings = (): AppSettings => ({
   isDarkMode: false,
@@ -312,9 +339,9 @@ const getDefaultBlocks = (): TimeBlockData[] => {
       category: 'Admin',
       color: '#2E8B8B',
       tasks: ['Share yesterday progress', 'Discuss blockers'],
-      isActive: true,
+      isActive: false,
       isCompleted: false,
-      progress: 60,
+      progress: 0,
     },
     {
       id: '3',
@@ -339,8 +366,8 @@ const getDefaultBlocks = (): TimeBlockData[] => {
       color: '#2E8B8B',
       tasks: ['Reply to client emails', 'Update project status'],
       isActive: false,
-      isCompleted: true,
-      progress: 100,
+      isCompleted: false,
+      progress: 0,
     },
     {
       id: '5',
