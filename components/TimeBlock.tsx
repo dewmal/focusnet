@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Pressable, Alert, Animated, TextInput, ScrollView, Modal } from 'react-native';
 import { Clock, Play, CircleCheck as CheckCircle, Trash2, CreditCard as Edit, Save, X, Plus } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -30,6 +30,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
   const [translateX] = useState(new Animated.Value(0));
   const [isSwipeActive, setIsSwipeActive] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+  const gestureRef = useRef(null);
   
   // Edit form state
   const [editTitle, setEditTitle] = useState(block.title);
@@ -94,13 +95,13 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
   };
 
   const handleEdit = () => {
-    // Reset swipe position and open edit modal
-    resetSwipe();
-    
     // Reset edit form with current values
     setEditTitle(block.title);
     setEditTasks([...block.tasks]);
     setIsEditModalVisible(true);
+    
+    // Reset swipe position immediately
+    resetSwipe();
   };
 
   const handleDelete = () => {
@@ -122,8 +123,8 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            resetSwipe();
             onDelete(block.id);
+            // No need to reset swipe here as the component will unmount
           }
         }
       ]
@@ -141,6 +142,9 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
   const handleStartFocus = () => {
     if (!isSwipeActive) {
       onStartFocus();
+    } else {
+      // If swiped, reset position instead of starting focus
+      resetSwipe();
     }
   };
 
@@ -200,6 +204,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       position: 'relative',
       overflow: 'hidden',
       borderRadius: 12,
+      backgroundColor: colors.surface,
     },
     blockContainer: {
       backgroundColor: colors.surface,
@@ -440,27 +445,30 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
     <View style={styles.container}>
       <View style={styles.swipeContainer}>
         {/* Action buttons positioned behind the block */}
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.editButton]}
-            onPress={handleEdit}
-            activeOpacity={0.8}
-          >
-            <Edit size={20} color="white" />
-            <Text style={styles.actionButtonText}>Edit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.deleteButton]}
-            onPress={handleDelete}
-            activeOpacity={0.8}
-          >
-            <Trash2 size={20} color="white" />
-            <Text style={styles.actionButtonText}>Delete</Text>
-          </TouchableOpacity>
-        </View>
+        {isSwipeActive && (
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.editButton]}
+              onPress={handleEdit}
+              activeOpacity={0.8}
+            >
+              <Edit size={20} color="white" />
+              <Text style={styles.actionButtonText}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.deleteButton]}
+              onPress={handleDelete}
+              activeOpacity={0.8}
+            >
+              <Trash2 size={20} color="white" />
+              <Text style={styles.actionButtonText}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Main block content that slides over the action buttons */}
         <PanGestureHandler
+          ref={gestureRef}
           onGestureEvent={onGestureEvent}
           onHandlerStateChange={onHandlerStateChange}
           activeOffsetX={[-10, 10]}
