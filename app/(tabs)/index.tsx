@@ -38,7 +38,7 @@ export default function TodayScreen() {
 
   const handleBlockPress = (block: TimeBlockData) => {
     // Navigate to edit screen (we can implement this later)
-    Alert.alert('Edit Block', `Edit "${block.title}" functionality coming soon!`);
+    Alert.alert('Block Details', `"${block.title}" details functionality coming soon!`);
   };
 
   const handleStartFocus = (block: TimeBlockData) => {
@@ -62,6 +62,22 @@ export default function TodayScreen() {
     } catch (error) {
       console.error('Error deleting block:', error);
       Alert.alert('Error', 'Failed to delete time block. Please try again.');
+    }
+  };
+
+  const handleEditBlock = async (blockId: string, updatedData: Partial<TimeBlockData>) => {
+    try {
+      const updatedBlocks = blocks.map(block => 
+        block.id === blockId 
+          ? { ...block, ...updatedData }
+          : block
+      );
+      setBlocks(updatedBlocks);
+      await saveTimeBlocks(updatedBlocks);
+      Alert.alert('Success', 'Time block has been updated!');
+    } catch (error) {
+      console.error('Error updating block:', error);
+      Alert.alert('Error', 'Failed to update time block. Please try again.');
     }
   };
 
@@ -399,7 +415,7 @@ export default function TodayScreen() {
             {blocks.length > 0 && (
               <View style={styles.swipeHint}>
                 <Text style={styles.swipeHintText}>
-                  💡 Swipe left on any block to delete it
+                  💡 Swipe left on any block to edit or delete it
                 </Text>
               </View>
             )}
@@ -417,6 +433,7 @@ export default function TodayScreen() {
                   onPress={() => handleBlockPress(block)}
                   onStartFocus={() => handleStartFocus(block)}
                   onDelete={handleDeleteBlock}
+                  onEdit={handleEditBlock}
                 />
               ))
             )}
