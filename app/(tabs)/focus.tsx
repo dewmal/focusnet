@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Coffee, Zap, CircleCheck as CheckCircle, Clock, TrendingUp, Target, Plus, Pause, Play } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import FocusTimer from '@/components/FocusTimer';
 import MobileHeader from '@/components/MobileHeader';
 import { loadTimeBlocks, saveTimeBlocks, filterBlocksByDate, getTodayDateString } from '@/utils/storage';
@@ -31,6 +32,16 @@ export default function FocusScreen() {
   useEffect(() => {
     loadData();
   }, []);
+
+  // Update focus mode state in AsyncStorage
+  const updateFocusMode = async (inFocus: boolean) => {
+    try {
+      await AsyncStorage.setItem('isInFocusMode', inFocus.toString());
+      setIsInFocusMode(inFocus);
+    } catch (error) {
+      console.error('Error updating focus mode:', error);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -113,7 +124,7 @@ export default function FocusScreen() {
       
       setAllBlocks(updatedBlocks);
       setActiveBlock(block);
-      setIsInFocusMode(true);
+      await updateFocusMode(true); // Hide tab bar
       
       await saveTimeBlocks(updatedBlocks);
       
@@ -125,9 +136,9 @@ export default function FocusScreen() {
     }
   };
 
-  const handleResumeFocus = () => {
+  const handleResumeFocus = async () => {
     if (activeBlock) {
-      setIsInFocusMode(true);
+      await updateFocusMode(true); // Hide tab bar
     }
   };
 
@@ -143,7 +154,7 @@ export default function FocusScreen() {
         setAllBlocks(updatedBlocks);
         await saveTimeBlocks(updatedBlocks);
         
-        setIsInFocusMode(false);
+        await updateFocusMode(false); // Show tab bar
         setActiveBlock(null);
         
         // Reload data to update all states
@@ -172,7 +183,7 @@ export default function FocusScreen() {
             onPress: async () => {
               try {
                 // Keep the block as active but exit focus mode
-                setIsInFocusMode(false);
+                await updateFocusMode(false); // Show tab bar
                 // Don't change the active block state - it remains active for resuming
               } catch (error) {
                 console.error('Error pausing focus:', error);
@@ -205,7 +216,7 @@ export default function FocusScreen() {
                 setAllBlocks(updatedBlocks);
                 await saveTimeBlocks(updatedBlocks);
                 
-                setIsInFocusMode(false);
+                await updateFocusMode(false); // Show tab bar
                 setActiveBlock(null);
                 
                 // Reload data to update all states
@@ -547,7 +558,7 @@ export default function FocusScreen() {
     },
   });
 
-  // HIDE TAB BAR IN FOCUS MODE
+  // SEPARATE FOCUS MODE VIEW - NO TAB BAR
   if (isInFocusMode && activeBlock) {
     return (
       <View style={styles.focusContainer}>

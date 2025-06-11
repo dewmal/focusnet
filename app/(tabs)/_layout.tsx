@@ -1,7 +1,31 @@
 import { Tabs } from 'expo-router';
 import { Calendar, Focus, Clock, Settings, BookOpen, Chrome as Home } from 'lucide-react-native';
+import { useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function TabLayout() {
+  const [isInFocusMode, setIsInFocusMode] = useState(false);
+
+  useEffect(() => {
+    // Listen for focus mode changes
+    const checkFocusMode = async () => {
+      try {
+        const focusMode = await AsyncStorage.getItem('isInFocusMode');
+        setIsInFocusMode(focusMode === 'true');
+      } catch (error) {
+        console.error('Error checking focus mode:', error);
+      }
+    };
+
+    // Check initially
+    checkFocusMode();
+
+    // Set up interval to check for changes
+    const interval = setInterval(checkFocusMode, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <Tabs
       screenOptions={{
@@ -13,7 +37,7 @@ export default function TabLayout() {
           paddingBottom: 8,
           height: 80,
           // Hide tab bar when in focus mode
-          display: 'flex',
+          display: isInFocusMode ? 'none' : 'flex',
         },
         tabBarActiveTintColor: '#FF6B35',
         tabBarInactiveTintColor: '#8B7355',
