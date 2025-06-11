@@ -12,27 +12,27 @@ interface FocusTimerProps {
   blockColor: string;
 }
 
-export default function FocusTimer({ 
-  duration, 
-  onComplete, 
-  onStop,
-  onEnd,
-  blockTitle, 
-  blockColor 
-}: FocusTimerProps) {
-  const [timeLeft, setTimeLeft] = useState(duration * 60); // Convert to seconds
+export default function FocusTimer({
+                                     duration,
+                                     onComplete,
+                                     onStop,
+                                     onEnd,
+                                     blockTitle,
+                                     blockColor
+                                   }: FocusTimerProps) {
+  const [timeLeft, setTimeLeft] = useState(duration * 60);
   const [isRunning, setIsRunning] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [pulseAnim] = useState(new Animated.Value(1));
   const [showControls, setShowControls] = useState(false);
-  const [controlsTimeout, setControlsTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [controlsTimeout, setControlsTimeout] = useState<number | null>(null);
   const { colors } = useTheme();
-  const screenHeight = Dimensions.get('window').height;
-  const screenWidth = Dimensions.get('window').width;
+
+  const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    
+    let interval: number;
+
     if (isRunning && !isPaused && timeLeft > 0) {
       interval = setInterval(() => {
         setTimeLeft(prev => {
@@ -50,18 +50,17 @@ export default function FocusTimer({
   }, [isRunning, isPaused, timeLeft, onComplete]);
 
   useEffect(() => {
-    // Gentle pulse animation when running
     const pulse = () => {
       if (isRunning && !isPaused) {
         Animated.sequence([
           Animated.timing(pulseAnim, {
             toValue: 1.02,
-            duration: 4000,
+            duration: 3000,
             useNativeDriver: true,
           }),
           Animated.timing(pulseAnim, {
             toValue: 1,
-            duration: 4000,
+            duration: 3000,
             useNativeDriver: true,
           }),
         ]).start(() => {
@@ -73,17 +72,16 @@ export default function FocusTimer({
     if (isRunning && !isPaused) pulse();
   }, [isRunning, isPaused, pulseAnim]);
 
-  // Auto-hide controls after 5 seconds
   useEffect(() => {
     if (showControls) {
       if (controlsTimeout) {
         clearTimeout(controlsTimeout);
       }
-      
+
       const timeout = setTimeout(() => {
         setShowControls(false);
       }, 5000);
-      
+
       setControlsTimeout(timeout);
     }
 
@@ -107,7 +105,7 @@ export default function FocusTimer({
 
   const toggleTimer = () => {
     if (timeLeft <= 0) return;
-    
+
     if (isPaused) {
       setIsPaused(false);
       setIsRunning(true);
@@ -142,16 +140,16 @@ export default function FocusTimer({
       'Do you want to exit focus mode?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Pause & Exit', 
+        {
+          text: 'Pause & Exit',
           onPress: () => {
             setIsRunning(false);
             setIsPaused(true);
             onStop();
           }
         },
-        { 
-          text: 'End Session', 
+        {
+          text: 'End Session',
           style: 'destructive',
           onPress: () => {
             setIsRunning(false);
@@ -201,38 +199,27 @@ export default function FocusTimer({
       "Your focus determines your reality.",
       "The key to success is to focus our conscious mind on things we desire.",
     ];
-    
-    // Use time left to cycle through quotes
+
     const quoteIndex = Math.floor((duration * 60 - timeLeft) / 60) % quotes.length;
     return quotes[quoteIndex];
   };
 
-  // Calculate responsive sizes
-  const timerSize = Math.min(screenWidth * 0.7, screenHeight * 0.35, 320);
-  const fontSize = Math.min(timerSize * 0.16, 56);
-
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#0A0A0A', // Even darker for better focus
-      position: 'relative',
+      backgroundColor: '#000000',
     },
     exitButton: {
       position: 'absolute',
-      top: 50,
-      right: 20,
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      backgroundColor: 'rgba(255, 255, 255, 0.08)',
+      top: 60,
+      right: 24,
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
       alignItems: 'center',
       justifyContent: 'center',
       zIndex: 1000,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.5,
-      shadowRadius: 16,
-      elevation: 10,
       borderWidth: 1,
       borderColor: 'rgba(255, 255, 255, 0.15)',
     },
@@ -240,231 +227,177 @@ export default function FocusTimer({
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
-      paddingHorizontal: 40,
+      paddingHorizontal: 24,
     },
     header: {
       alignItems: 'center',
-      marginBottom: Math.max(50, screenHeight * 0.06),
+      marginBottom: 60,
       maxWidth: screenWidth * 0.9,
     },
     blockTitle: {
-      fontSize: Math.min(28, screenWidth * 0.07),
+      fontSize: 24,
       fontWeight: '700',
       color: '#FFFFFF',
-      marginBottom: 24,
+      marginBottom: 20,
       textAlign: 'center',
-      lineHeight: Math.min(36, screenWidth * 0.09),
-      letterSpacing: 0.5,
+      letterSpacing: 0.2,
     },
     statusContainer: {
-      backgroundColor: getStatusColor() + '15',
-      paddingHorizontal: 28,
-      paddingVertical: 14,
-      borderRadius: 30,
-      borderWidth: 2,
-      borderColor: getStatusColor() + '30',
-      shadowColor: getStatusColor(),
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.3,
-      shadowRadius: 12,
-      elevation: 8,
+      backgroundColor: getStatusColor() + '20',
+      paddingHorizontal: 20,
+      paddingVertical: 10,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: getStatusColor() + '40',
     },
     statusText: {
-      fontSize: 15,
+      fontSize: 14,
       color: getStatusColor(),
-      fontWeight: '700',
-      letterSpacing: 1.5,
+      fontWeight: '600',
+      letterSpacing: 1,
       textTransform: 'uppercase',
     },
     timerContainer: {
       alignItems: 'center',
       justifyContent: 'center',
-      marginBottom: Math.max(50, screenHeight * 0.06),
+      marginBottom: 40,
     },
     timerCircle: {
-      width: timerSize,
-      height: timerSize,
-      borderRadius: timerSize / 2,
-      borderWidth: 6,
+      width: Math.min(screenWidth * 0.7, 280),
+      height: Math.min(screenWidth * 0.7, 280),
+      borderRadius: Math.min(screenWidth * 0.35, 140),
+      borderWidth: 4,
       borderColor: blockColor,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: 'rgba(255, 255, 255, 0.03)',
+      backgroundColor: 'rgba(255, 255, 255, 0.02)',
+      marginBottom: 30,
       shadowColor: blockColor,
       shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.8,
-      shadowRadius: 40,
-      elevation: 20,
-      marginBottom: 40,
+      shadowOpacity: 0.6,
+      shadowRadius: 20,
+      elevation: 15,
     },
     timeText: {
-      fontSize: fontSize,
-      fontWeight: '800',
+      fontSize: Math.min(screenWidth * 0.14, 48),
+      fontWeight: '900',
       color: blockColor,
-      marginBottom: 8,
+      marginBottom: 4,
       letterSpacing: -1,
-      textShadowColor: blockColor + '60',
-      textShadowOffset: { width: 0, height: 0 },
-      textShadowRadius: 25,
+      textAlign: 'center',
     },
     remainingText: {
-      fontSize: 13,
+      fontSize: 12,
       color: 'rgba(255, 255, 255, 0.6)',
-      fontWeight: '700',
-      letterSpacing: 3,
+      fontWeight: '600',
+      letterSpacing: 2,
       textTransform: 'uppercase',
     },
     progressContainer: {
       width: '100%',
       alignItems: 'center',
-      maxWidth: Math.min(320, screenWidth * 0.75),
+      maxWidth: 280,
     },
     progressBar: {
       width: '100%',
-      height: 6,
-      backgroundColor: 'rgba(255, 255, 255, 0.08)',
-      borderRadius: 3,
+      height: 25,
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      borderRadius: 2,
       overflow: 'hidden',
-      marginBottom: 20,
+      marginBottom: 25,
     },
     progressFill: {
       height: '100%',
-      borderRadius: 3,
+      borderRadius: 2,
       backgroundColor: blockColor,
-      shadowColor: blockColor,
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 1,
-      shadowRadius: 10,
     },
     progressText: {
-      fontSize: 15,
+      fontSize: 14,
       color: 'rgba(255, 255, 255, 0.7)',
-      fontWeight: '700',
-      letterSpacing: 1,
+      fontWeight: '600',
     },
     controlsToggle: {
       position: 'absolute',
-      bottom: 140,
+      bottom: 80,
       alignSelf: 'center',
-      backgroundColor: 'rgba(255, 255, 255, 0.08)',
-      paddingHorizontal: 28,
-      paddingVertical: 16,
-      borderRadius: 30,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 6 },
-      shadowOpacity: 0.4,
-      shadowRadius: 16,
-      elevation: 10,
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      borderRadius: 20,
       borderWidth: 1,
       borderColor: 'rgba(255, 255, 255, 0.15)',
     },
     controlsToggleText: {
-      fontSize: 13,
+      fontSize: 12,
       color: 'rgba(255, 255, 255, 0.7)',
-      fontWeight: '600',
-      letterSpacing: 0.5,
+      fontWeight: '500',
     },
     controls: {
       position: 'absolute',
       bottom: 80,
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 24,
+      gap: 20,
       alignSelf: 'center',
-      backgroundColor: 'rgba(255, 255, 255, 0.08)',
-      paddingHorizontal: 32,
-      paddingVertical: 24,
-      borderRadius: 40,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 10 },
-      shadowOpacity: 0.5,
-      shadowRadius: 25,
-      elevation: 15,
+      backgroundColor: 'rgba(0, 0, 0, 0.92)',
+      paddingHorizontal: 24,
+      paddingVertical: 16,
+      borderRadius: 30,
       borderWidth: 1,
       borderColor: 'rgba(255, 255, 255, 0.15)',
     },
     controlButton: {
-      width: 52,
-      height: 52,
-      borderRadius: 26,
+      width: 48,
+      height: 48,
+      borderRadius: 24,
       alignItems: 'center',
       justifyContent: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.4,
-      shadowRadius: 12,
-      elevation: 8,
     },
     primaryButton: {
-      width: 64,
-      height: 64,
-      borderRadius: 32,
+      width: 56,
+      height: 56,
+      borderRadius: 28,
       backgroundColor: blockColor,
-      shadowColor: blockColor,
-      shadowOpacity: 0.8,
-      shadowRadius: 16,
     },
     secondaryButton: {
-      backgroundColor: 'rgba(255, 255, 255, 0.08)',
-      borderWidth: 2,
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      borderWidth: 1,
       borderColor: 'rgba(255, 255, 255, 0.2)',
     },
     resetButton: {
-      backgroundColor: 'rgba(255, 184, 0, 0.15)',
-      borderWidth: 2,
-      borderColor: 'rgba(255, 184, 0, 0.3)',
-    },
-    disabledButton: {
-      opacity: 0.3,
+      backgroundColor: 'rgba(255, 184, 0, 0.2)',
+      borderWidth: 1,
+      borderColor: 'rgba(255, 184, 0, 0.4)',
     },
     motivationContainer: {
       position: 'absolute',
-      bottom: Math.max(220, screenHeight * 0.28),
+      bottom: 160,
       alignSelf: 'center',
-      paddingHorizontal: 50,
-      maxWidth: Math.min(450, screenWidth * 0.9),
+      paddingHorizontal: 40,
+      maxWidth: screenWidth * 0.85,
     },
     motivationText: {
-      fontSize: 15,
+      fontSize: 14,
       color: 'rgba(255, 255, 255, 0.5)',
       fontStyle: 'italic',
       textAlign: 'center',
-      lineHeight: 24,
-      fontWeight: '500',
-      letterSpacing: 0.3,
-    },
-    completionCelebration: {
-      position: 'absolute',
-      top: '50%',
-      left: '50%',
-      transform: [{ translateX: -50 }, { translateY: -50 }],
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    celebrationText: {
-      fontSize: 24,
-      color: '#4CAF50',
-      fontWeight: '800',
-      textAlign: 'center',
-      marginTop: 20,
-      letterSpacing: 1,
+      lineHeight: 20,
+      fontWeight: '400',
     },
   });
 
   return (
     <View style={styles.container}>
-      <StatusBar hidden />
-      
-      {/* Exit Button */}
-      <TouchableOpacity 
+      <StatusBar barStyle="light-content" backgroundColor="#000000" />
+
+      <TouchableOpacity
         style={styles.exitButton}
         onPress={handleExit}
         activeOpacity={0.7}
       >
-        <X size={22} color="rgba(255, 255, 255, 0.8)" />
+        <X size={20} color="rgba(255, 255, 255, 0.8)" />
       </TouchableOpacity>
 
-      {/* Main Content */}
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.blockTitle}>{blockTitle}</Text>
@@ -474,7 +407,7 @@ export default function FocusTimer({
         </View>
 
         <View style={styles.timerContainer}>
-          <Animated.View 
+          <Animated.View
             style={[
               styles.timerCircle,
               { transform: [{ scale: pulseAnim }] }
@@ -490,11 +423,11 @@ export default function FocusTimer({
 
           <View style={styles.progressContainer}>
             <View style={styles.progressBar}>
-              <View 
+              <View
                 style={[
-                  styles.progressFill, 
+                  styles.progressFill,
                   { width: `${getProgress()}%` }
-                ]} 
+                ]}
               />
             </View>
             <Text style={styles.progressText}>
@@ -503,7 +436,6 @@ export default function FocusTimer({
           </View>
         </View>
 
-        {/* Dynamic Motivational Quote */}
         <View style={styles.motivationContainer}>
           <Text style={styles.motivationText}>
             "{getMotivationalQuote()}"
@@ -511,9 +443,8 @@ export default function FocusTimer({
         </View>
       </View>
 
-      {/* Controls Toggle */}
       {!showControls && timeLeft > 0 && (
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.controlsToggle}
           onPress={() => setShowControls(true)}
           activeOpacity={0.7}
@@ -522,35 +453,34 @@ export default function FocusTimer({
         </TouchableOpacity>
       )}
 
-      {/* Controls */}
       {showControls && timeLeft > 0 && (
         <View style={styles.controls}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.controlButton, styles.resetButton]}
             onPress={resetTimer}
             activeOpacity={0.7}
           >
-            <RotateCcw size={18} color="#FFB800" />
+            <RotateCcw size={16} color="#FFB800" />
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.controlButton, styles.primaryButton]}
             onPress={toggleTimer}
             activeOpacity={0.7}
           >
             {isPaused ? (
-              <Play size={26} color="white" />
+              <Play size={22} color="white" />
             ) : (
-              <Pause size={26} color="white" />
+              <Pause size={22} color="white" />
             )}
           </TouchableOpacity>
 
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[styles.controlButton, styles.secondaryButton]}
             onPress={() => setShowControls(false)}
             activeOpacity={0.7}
           >
-            <X size={18} color="rgba(255, 255, 255, 0.7)" />
+            <X size={16} color="rgba(255, 255, 255, 0.7)" />
           </TouchableOpacity>
         </View>
       )}
