@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Pressable, Alert, Animated, TextInput, ScrollView, Modal, Platform, Dimensions } from 'react-native';
-import { Clock, Play, CircleCheck as CheckCircle, Trash2, CreditCard as Edit, Save, X, Plus, ChevronDown, Palette } from 'lucide-react-native';
+import { Clock, Play, CircleCheck as CheckCircle, Trash2, CreditCard as Edit, Save, X, Plus, ChevronDown, Palette, Calendar } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { loadCategories, BlockCategory } from '@/utils/storage';
@@ -8,6 +8,7 @@ import { loadCategories, BlockCategory } from '@/utils/storage';
 export interface TimeBlockData {
   id: string;
   title: string;
+  date: string; // Format: YYYY-MM-DD
   startTime: string;
   endTime: string;
   category: string;
@@ -37,6 +38,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
   
   // Edit form state
   const [editTitle, setEditTitle] = useState(block.title);
+  const [editDate, setEditDate] = useState(block.date);
   const [editTasks, setEditTasks] = useState([...block.tasks]);
   const [editStartHour, setEditStartHour] = useState(12);
   const [editStartMinute, setEditStartMinute] = useState(0);
@@ -115,6 +117,51 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
     return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    // Reset time for comparison
+    const blockDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const tomorrowDate = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate());
+    const yesterdayDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+
+    if (blockDate.getTime() === todayDate.getTime()) {
+      return 'Today';
+    } else if (blockDate.getTime() === tomorrowDate.getTime()) {
+      return 'Tomorrow';
+    } else if (blockDate.getTime() === yesterdayDate.getTime()) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    }
+  };
+
+  const generateDateOptions = () => {
+    const dates = [];
+    const today = new Date();
+    
+    // Add past 3 days, today, and next 14 days
+    for (let i = -3; i <= 14; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const dateString = date.toISOString().split('T')[0];
+      const label = formatDate(dateString);
+      dates.push({ value: dateString, label });
+    }
+    
+    return dates;
+  };
+
   const getStatusIcon = () => {
     if (block.isCompleted) {
       return <CheckCircle size={16} color={colors.success} />;
@@ -129,6 +176,14 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
     if (block.isCompleted) return '100%';
     if (block.progress) return `${block.progress}%`;
     return '0%';
+  };
+
+  const isBlockInPast = () => {
+    const blockDate = new Date(block.date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    blockDate.setHours(0, 0, 0, 0);
+    return blockDate < today;
   };
 
   // Web-compatible gesture handling
@@ -182,6 +237,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
 
   const handleEdit = () => {
     setEditTitle(block.title);
+    setEditDate(block.date);
     setEditTasks([...block.tasks]);
     setEditCategory(block.category);
     setEditColor(block.color);
@@ -258,6 +314,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
     
     onEdit(block.id, {
       title: editTitle.trim(),
+      date: editDate,
       startTime: startTime24,
       endTime: endTime24,
       category: editCategory,
@@ -270,6 +327,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
 
   const handleCancelEdit = () => {
     setEditTitle(block.title);
+    setEditDate(block.date);
     setEditTasks([...block.tasks]);
     setEditCategory(block.category);
     setEditColor(block.color);
@@ -401,12 +459,13 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       borderLeftColor: block.color,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
+      shadowOpacity: isBlockInPast() ? 0.05 : 0.1,
       shadowRadius: 4,
       elevation: 3,
       minHeight: 120,
       zIndex: 1,
       width: '100%',
+      opacity: isBlockInPast() ? 0.7 : 1,
     },
     header: {
       flexDirection: 'row',
@@ -428,6 +487,16 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       fontWeight: '600',
       flexShrink: 1,
     },
+    dateText: {
+      fontSize: 10,
+      color: colors.primary,
+      fontWeight: '700',
+      backgroundColor: colors.primary + '20',
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 4,
+      marginLeft: 4,
+    },
     playButton: {
       padding: 8,
       borderRadius: 20,
@@ -435,6 +504,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       justifyContent: 'center',
       backgroundColor: block.color,
       marginLeft: 8,
+      opacity: isBlockInPast() ? 0.5 : 1,
     },
     title: {
       fontSize: screenWidth < 400 ? 15 : 16,
@@ -529,6 +599,26 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       fontSize: 16,
       color: colors.text,
       minHeight: 44,
+    },
+    dateSection: {
+      marginBottom: 20,
+    },
+    dateDropdownButton: {
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      padding: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      minHeight: 44,
+    },
+    dateDropdownContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+      flex: 1,
     },
     timeSection: {
       marginBottom: 20,
@@ -775,11 +865,13 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
           <Text style={styles.timeText}>
             {formatTime12Hour(block.startTime)} - {formatTime12Hour(block.endTime)}
           </Text>
+          <Text style={styles.dateText}>{formatDate(block.date)}</Text>
           {getStatusIcon()}
         </View>
         <TouchableOpacity 
           style={styles.playButton}
           onPress={handleStartFocus}
+          disabled={isBlockInPast()}
         >
           <Play size={14} color="white" />
         </TouchableOpacity>
@@ -890,6 +982,21 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
                   placeholderTextColor={colors.textSecondary}
                   maxLength={50}
                 />
+              </View>
+
+              {/* Date Section */}
+              <View style={styles.dateSection}>
+                <Text style={styles.formLabel}>Date</Text>
+                <TouchableOpacity 
+                  style={styles.dateDropdownButton}
+                  onPress={() => setActiveDropdown('date')}
+                >
+                  <View style={styles.dateDropdownContent}>
+                    <Calendar size={16} color={colors.primary} />
+                    <Text style={styles.timeDropdownText}>{formatDate(editDate)}</Text>
+                  </View>
+                  <ChevronDown size={16} color={colors.textSecondary} />
+                </TouchableOpacity>
               </View>
 
               {/* Time Section */}
@@ -1059,6 +1166,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
         </View>
 
         {/* Dropdown Modals */}
+        {renderDropdown('date', generateDateOptions(), editDate, setEditDate)}
         {renderDropdown('startHour', hours, editStartHour, setEditStartHour)}
         {renderDropdown('startMinute', minutes, editStartMinute, setEditStartMinute)}
         {renderDropdown('startPeriod', periods, editStartPeriod, setEditStartPeriod)}

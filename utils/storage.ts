@@ -31,14 +31,44 @@ export interface AppSettings {
   defaultDuration: number;
 }
 
-// Helper function to sort blocks by time
-const sortBlocksByTime = (blocks: TimeBlockData[]): TimeBlockData[] => {
+// Helper function to sort blocks by date and time
+const sortBlocksByDateTime = (blocks: TimeBlockData[]): TimeBlockData[] => {
   return blocks.sort((a, b) => {
+    // First sort by date
+    const dateA = new Date(a.date);
+    const dateB = new Date(b.date);
+    
+    if (dateA.getTime() !== dateB.getTime()) {
+      return dateA.getTime() - dateB.getTime();
+    }
+    
+    // If dates are the same, sort by time
     const timeA = a.startTime.split(':').map(Number);
     const timeB = b.startTime.split(':').map(Number);
     const minutesA = timeA[0] * 60 + timeA[1];
     const minutesB = timeB[0] * 60 + timeB[1];
     return minutesA - minutesB;
+  });
+};
+
+// Helper function to filter blocks by date
+export const filterBlocksByDate = (blocks: TimeBlockData[], date: string): TimeBlockData[] => {
+  return blocks.filter(block => block.date === date);
+};
+
+// Helper function to get today's date string
+export const getTodayDateString = (): string => {
+  return new Date().toISOString().split('T')[0];
+};
+
+// Helper function to get blocks for a specific date range
+export const getBlocksInDateRange = (blocks: TimeBlockData[], startDate: string, endDate: string): TimeBlockData[] => {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  
+  return blocks.filter(block => {
+    const blockDate = new Date(block.date);
+    return blockDate >= start && blockDate <= end;
   });
 };
 
@@ -64,8 +94,8 @@ export const loadSettings = async (): Promise<AppSettings> => {
 // Time Blocks
 export const saveTimeBlocks = async (blocks: TimeBlockData[]) => {
   try {
-    // Always sort blocks by time before saving
-    const sortedBlocks = sortBlocksByTime(blocks);
+    // Always sort blocks by date and time before saving
+    const sortedBlocks = sortBlocksByDateTime(blocks);
     await AsyncStorage.setItem(BLOCKS_KEY, JSON.stringify(sortedBlocks));
   } catch (error) {
     console.error('Error saving time blocks:', error);
@@ -77,10 +107,22 @@ export const loadTimeBlocks = async (): Promise<TimeBlockData[]> => {
     const blocks = await AsyncStorage.getItem(BLOCKS_KEY);
     const loadedBlocks = blocks ? JSON.parse(blocks) : getDefaultBlocks();
     // Always return sorted blocks
-    return sortBlocksByTime(loadedBlocks);
+    return sortBlocksByDateTime(loadedBlocks);
   } catch (error) {
     console.error('Error loading time blocks:', error);
-    return sortBlocksByTime(getDefaultBlocks());
+    return sortBlocksByDateTime(getDefaultBlocks());
+  }
+};
+
+// Load blocks for today only
+export const loadTodayBlocks = async (): Promise<TimeBlockData[]> => {
+  try {
+    const allBlocks = await loadTimeBlocks();
+    const today = getTodayDateString();
+    return filterBlocksByDate(allBlocks, today);
+  } catch (error) {
+    console.error('Error loading today blocks:', error);
+    return [];
   }
 };
 
@@ -241,56 +283,80 @@ const getDefaultSettings = (): AppSettings => ({
   defaultDuration: 60,
 });
 
-const getDefaultBlocks = (): TimeBlockData[] => [
-  {
-    id: '1',
-    title: 'Morning Deep Work',
-    startTime: '09:00',
-    endTime: '11:00',
-    category: 'Creative',
-    color: '#FF6B35',
-    tasks: ['Review project requirements', 'Design system architecture'],
-    isActive: false,
-    isCompleted: false,
-    progress: 0,
-  },
-  {
-    id: '2',
-    title: 'Team Standup',
-    startTime: '11:00',
-    endTime: '11:30',
-    category: 'Admin',
-    color: '#2E8B8B',
-    tasks: ['Share yesterday progress', 'Discuss blockers'],
-    isActive: true,
-    isCompleted: false,
-    progress: 60,
-  },
-  {
-    id: '3',
-    title: 'Focused Coding',
-    startTime: '13:00',
-    endTime: '15:00',
-    category: 'Creative',
-    color: '#FF6B35',
-    tasks: ['Implement user authentication', 'Write unit tests'],
-    isActive: false,
-    isCompleted: false,
-    progress: 0,
-  },
-  {
-    id: '4',
-    title: 'Email & Communications',
-    startTime: '15:00',
-    endTime: '15:30',
-    category: 'Admin',
-    color: '#2E8B8B',
-    tasks: ['Reply to client emails', 'Update project status'],
-    isActive: false,
-    isCompleted: true,
-    progress: 100,
-  },
-];
+const getDefaultBlocks = (): TimeBlockData[] => {
+  const today = getTodayDateString();
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowString = tomorrow.toISOString().split('T')[0];
+  
+  return [
+    {
+      id: '1',
+      title: 'Morning Deep Work',
+      date: today,
+      startTime: '09:00',
+      endTime: '11:00',
+      category: 'Creative',
+      color: '#FF6B35',
+      tasks: ['Review project requirements', 'Design system architecture'],
+      isActive: false,
+      isCompleted: false,
+      progress: 0,
+    },
+    {
+      id: '2',
+      title: 'Team Standup',
+      date: today,
+      startTime: '11:00',
+      endTime: '11:30',
+      category: 'Admin',
+      color: '#2E8B8B',
+      tasks: ['Share yesterday progress', 'Discuss blockers'],
+      isActive: true,
+      isCompleted: false,
+      progress: 60,
+    },
+    {
+      id: '3',
+      title: 'Focused Coding',
+      date: today,
+      startTime: '13:00',
+      endTime: '15:00',
+      category: 'Creative',
+      color: '#FF6B35',
+      tasks: ['Implement user authentication', 'Write unit tests'],
+      isActive: false,
+      isCompleted: false,
+      progress: 0,
+    },
+    {
+      id: '4',
+      title: 'Email & Communications',
+      date: today,
+      startTime: '15:00',
+      endTime: '15:30',
+      category: 'Admin',
+      color: '#2E8B8B',
+      tasks: ['Reply to client emails', 'Update project status'],
+      isActive: false,
+      isCompleted: true,
+      progress: 100,
+    },
+    {
+      id: '5',
+      title: 'Planning Session',
+      date: tomorrowString,
+      startTime: '10:00',
+      endTime: '11:30',
+      category: 'Admin',
+      color: '#2E8B8B',
+      tasks: ['Plan next sprint', 'Review backlog'],
+      isActive: false,
+      isCompleted: false,
+      progress: 0,
+    },
+  ];
+};
 
 const getDefaultCategories = (): BlockCategory[] => [
   { id: '1', name: 'Creative', color: '#FF6B35', icon: 'paintbrush' },

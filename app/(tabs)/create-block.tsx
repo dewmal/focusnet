@@ -20,6 +20,7 @@ import MobileHeader from '@/components/MobileHeader';
 export default function CreateBlockScreen() {
   const { colors } = useTheme();
   const [title, setTitle] = useState('');
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]); // Today's date
   const [startHour, setStartHour] = useState(9);
   const [startMinute, setStartMinute] = useState(0);
   const [startPeriod, setStartPeriod] = useState<'AM' | 'PM'>('AM');
@@ -32,7 +33,7 @@ export default function CreateBlockScreen() {
   const [errors, setErrors] = useState<{[key: string]: string}>({});
   
   // Modal dropdown states
-  const [activeDropdown, setActiveDropdown] = useState<'hour' | 'minute' | 'period' | 'duration' | null>(null);
+  const [activeDropdown, setActiveDropdown] = useState<'hour' | 'minute' | 'period' | 'duration' | 'date' | null>(null);
 
   const predefinedColors = [
     '#FF6B35', '#2E8B8B', '#8B4F9F', '#4F8B3B', 
@@ -58,6 +59,51 @@ export default function CreateBlockScreen() {
   useEffect(() => {
     loadCategoriesData();
   }, []);
+
+  const generateDateOptions = () => {
+    const dates = [];
+    const today = new Date();
+    
+    // Add past 3 days, today, and next 14 days
+    for (let i = -3; i <= 14; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      const dateString = date.toISOString().split('T')[0];
+      const label = formatDate(dateString);
+      dates.push({ value: dateString, label });
+    }
+    
+    return dates;
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    // Reset time for comparison
+    const blockDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const tomorrowDate = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate());
+    const yesterdayDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+
+    if (blockDate.getTime() === todayDate.getTime()) {
+      return 'Today';
+    } else if (blockDate.getTime() === tomorrowDate.getTime()) {
+      return 'Tomorrow';
+    } else if (blockDate.getTime() === yesterdayDate.getTime()) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'short', 
+        month: 'short', 
+        day: 'numeric' 
+      });
+    }
+  };
 
   const formatTimeTo24Hour = (hour: number, minute: number, period: 'AM' | 'PM') => {
     let hour24 = hour;
@@ -136,6 +182,7 @@ export default function CreateBlockScreen() {
 
   const clearForm = () => {
     setTitle('');
+    setSelectedDate(new Date().toISOString().split('T')[0]);
     setStartHour(9);
     setStartMinute(0);
     setStartPeriod('AM');
@@ -161,6 +208,7 @@ export default function CreateBlockScreen() {
       const blockData: TimeBlockData = {
         id: Date.now().toString(),
         title: title.trim(),
+        date: selectedDate,
         startTime,
         endTime,
         category: selectedCategory!.name,
@@ -214,6 +262,12 @@ export default function CreateBlockScreen() {
     let title = '';
 
     switch (activeDropdown) {
+      case 'date':
+        options = generateDateOptions();
+        selectedValue = selectedDate;
+        onSelect = setSelectedDate;
+        title = 'Select Date';
+        break;
       case 'hour':
         options = hours;
         selectedValue = startHour;
@@ -353,6 +407,31 @@ export default function CreateBlockScreen() {
       marginTop: 8,
       marginLeft: 4,
       fontWeight: '500',
+    },
+    dateContainer: {
+      gap: 20,
+    },
+    dateDropdownContainer: {
+      marginBottom: 20,
+    },
+    dateDropdownButton: {
+      backgroundColor: colors.surface,
+      borderWidth: 2,
+      borderColor: colors.border,
+      borderRadius: 12,
+      padding: 20,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    dateDropdownButtonActive: {
+      borderColor: colors.primary,
+      backgroundColor: colors.primary + '10',
+    },
+    dateDropdownValue: {
+      fontSize: 18,
+      fontWeight: '700',
+      color: colors.text,
     },
     tasksContainer: {
       gap: 16,
@@ -697,7 +776,39 @@ export default function CreateBlockScreen() {
             {errors.title && <Text style={styles.errorText}>{errors.title}</Text>}
           </View>
 
-          {/* 2. Tasks Section */}
+          {/* 2. Date Section */}
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
+              <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
+                <Calendar size={18} color={colors.primary} />
+              </View>
+              <View style={styles.sectionContent}>
+                <Text style={styles.sectionTitle}>Date</Text>
+                <Text style={styles.sectionDescription}>When will this happen?</Text>
+              </View>
+            </View>
+            
+            <View style={styles.dateContainer}>
+              {/* Date Selection */}
+              <View style={styles.dateDropdownContainer}>
+                <TouchableOpacity 
+                  style={[
+                    styles.dateDropdownButton,
+                    activeDropdown === 'date' && styles.dateDropdownButtonActive
+                  ]}
+                  onPress={() => setActiveDropdown('date')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.dateDropdownValue}>
+                    {formatDate(selectedDate)}
+                  </Text>
+                  <ChevronDown size={20} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+
+          {/* 3. Tasks Section */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
@@ -739,7 +850,7 @@ export default function CreateBlockScreen() {
             </View>
           </View>
 
-          {/* 3. Duration Section */}
+          {/* 4. Duration Section */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
@@ -835,7 +946,7 @@ export default function CreateBlockScreen() {
             </View>
           </View>
 
-          {/* 4. Category Section */}
+          {/* 5. Category Section */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>
@@ -882,7 +993,7 @@ export default function CreateBlockScreen() {
             {errors.category && <Text style={styles.errorText}>{errors.category}</Text>}
           </View>
 
-          {/* 5. Color Section */}
+          {/* 6. Color Section */}
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '30' }]}>

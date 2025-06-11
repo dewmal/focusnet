@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Alert, Dimensions, Platform } from 'react-native';
-import { Plus, Calendar, TrendingUp } from 'lucide-react-native';
+import { Plus, Calendar, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import TimeBlock, { TimeBlockData } from '@/components/TimeBlock';
 import MobileHeader from '@/components/MobileHeader';
-import { loadTimeBlocks, saveTimeBlocks } from '@/utils/storage';
+import { loadTimeBlocks, saveTimeBlocks, filterBlocksByDate, getTodayDateString } from '@/utils/storage';
 import { useTheme } from '@/contexts/ThemeContext';
 
 export default function TodayScreen() {
   const [blocks, setBlocks] = useState<TimeBlockData[]>([]);
+  const [allBlocks, setAllBlocks] = useState<TimeBlockData[]>([]);
+  const [selectedDate, setSelectedDate] = useState(getTodayDateString());
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const { colors } = useTheme();
@@ -32,10 +34,56 @@ export default function TodayScreen() {
     }, [])
   );
 
+  // Update displayed blocks when date changes
+  useEffect(() => {
+    const filteredBlocks = filterBlocksByDate(allBlocks, selectedDate);
+    setBlocks(filteredBlocks);
+  }, [selectedDate, allBlocks]);
+
   const loadData = async () => {
     const savedBlocks = await loadTimeBlocks();
-    // Blocks are already sorted by the storage utility
-    setBlocks(savedBlocks);
+    setAllBlocks(savedBlocks);
+    const filteredBlocks = filterBlocksByDate(savedBlocks, selectedDate);
+    setBlocks(filteredBlocks);
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+
+    // Reset time for comparison
+    const blockDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const tomorrowDate = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate());
+    const yesterdayDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
+
+    if (blockDate.getTime() === todayDate.getTime()) {
+      return 'Today';
+    } else if (blockDate.getTime() === tomorrowDate.getTime()) {
+      return 'Tomorrow';
+    } else if (blockDate.getTime() === yesterdayDate.getTime()) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+    }
+  };
+
+  const navigateDate = (direction: 'prev' | 'next') => {
+    const currentDate = new Date(selectedDate);
+    if (direction === 'next') {
+      currentDate.setDate(currentDate.getDate() + 1);
+    } else {
+      currentDate.setDate(currentDate.getDate() - 1);
+    }
+    setSelectedDate(currentDate.toISOString().split('T')[0]);
   };
 
   const handleBlockPress = (block: TimeBlockData) => {
@@ -59,6 +107,7 @@ export default function TodayScreen() {
 
     Alert.alert(
       `📋 ${block.title}`,
+      `📅 ${formatDate(block.date)}\n` +
       `⏰ ${formatTime12Hour(block.startTime)} - ${formatTime12Hour(block.endTime)}\n` +
       `🏷️ Category: ${block.category}\n` +
       `📊 Status: ${statusText}${tasksList}`,
@@ -76,19 +125,19 @@ export default function TodayScreen() {
   const handleStartFocus = (block: TimeBlockData) => {
     setActiveBlockId(block.id);
     // Update block as active
-    const updatedBlocks = blocks.map(b => 
+    const updatedBlocks = allBlocks.map(b => 
       b.id === block.id 
         ? { ...b, isActive: true }
         : { ...b, isActive: false }
     );
-    setBlocks(updatedBlocks);
+    setAllBlocks(updatedBlocks);
     saveTimeBlocks(updatedBlocks);
   };
 
   const handleDeleteBlock = async (blockId: string) => {
     try {
-      const updatedBlocks = blocks.filter(block => block.id !== blockId);
-      setBlocks(updatedBlocks);
+      const updatedBlocks = allBlocks.filter(block => block.id !== blockId);
+      setAllBlocks(updatedBlocks);
       await saveTimeBlocks(updatedBlocks);
       Alert.alert('Success', 'Time block has been deleted!');
     } catch (error) {
@@ -99,17 +148,14 @@ export default function TodayScreen() {
 
   const handleEditBlock = async (blockId: string, updatedData: Partial<TimeBlockData>) => {
     try {
-      const updatedBlocks = blocks.map(block => 
+      const updatedBlocks = allBlocks.map(block => 
         block.id === blockId 
           ? { ...block, ...updatedData }
           : block
       );
-      setBlocks(updatedBlocks);
+      setAllBlocks(updatedBlocks);
       await saveTimeBlocks(updatedBlocks);
       Alert.alert('Success', 'Time block has been updated!');
-      
-      // Reload to get properly sorted blocks
-      await loadData();
     } catch (error) {
       console.error('Error updating block:', error);
       Alert.alert('Error', 'Failed to update time block. Please try again.');
@@ -139,6 +185,7 @@ export default function TodayScreen() {
       const newBlock: TimeBlockData = {
         id: Date.now().toString(),
         title: `Quick Focus Block (${duration}min)`,
+        date: selectedDate,
         startTime,
         endTime,
         category: 'Personal',
@@ -149,15 +196,11 @@ export default function TodayScreen() {
         progress: 0,
       };
 
-      const updatedBlocks = [...blocks, newBlock];
-      // Storage utility will handle sorting
-      setBlocks(updatedBlocks);
+      const updatedBlocks = [...allBlocks, newBlock];
+      setAllBlocks(updatedBlocks);
       await saveTimeBlocks(updatedBlocks);
       
       Alert.alert('Success', `Quick ${duration}-minute block has been added!`);
-      
-      // Reload to get properly sorted blocks
-      await loadData();
     } catch (error) {
       console.error('Error creating quick block:', error);
       Alert.alert('Error', 'Failed to create quick block. Please try again.');
@@ -165,39 +208,46 @@ export default function TodayScreen() {
   };
 
   const handleCopyYesterday = () => {
+    const yesterday = new Date(selectedDate);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayString = yesterday.toISOString().split('T')[0];
+    
+    const yesterdayBlocks = filterBlocksByDate(allBlocks, yesterdayString);
+    
+    if (yesterdayBlocks.length === 0) {
+      Alert.alert('No Blocks Found', 'There are no blocks from yesterday to copy.');
+      return;
+    }
+
     Alert.alert(
       'Copy Yesterday\'s Plan',
-      'This will copy your time blocks from yesterday to today. Continue?',
+      `This will copy ${yesterdayBlocks.length} time blocks from yesterday to ${formatDate(selectedDate)}. Continue?`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Copy', onPress: copyYesterdaysPlan },
+        { text: 'Copy', onPress: () => copyBlocks(yesterdayBlocks) },
       ]
     );
   };
 
-  const copyYesterdaysPlan = async () => {
+  const copyBlocks = async (blocksToCopy: TimeBlockData[]) => {
     try {
-      // For demo purposes, we'll duplicate existing blocks with new IDs
-      const copiedBlocks = blocks.map(block => ({
+      const copiedBlocks = blocksToCopy.map(block => ({
         ...block,
         id: `${Date.now()}-${Math.random()}`,
+        date: selectedDate,
         isActive: false,
         isCompleted: false,
         progress: 0,
       }));
 
-      const updatedBlocks = [...blocks, ...copiedBlocks];
-      // Storage utility will handle sorting
-      setBlocks(updatedBlocks);
+      const updatedBlocks = [...allBlocks, ...copiedBlocks];
+      setAllBlocks(updatedBlocks);
       await saveTimeBlocks(updatedBlocks);
       
-      Alert.alert('Success', `${copiedBlocks.length} blocks have been copied from yesterday!`);
-      
-      // Reload to get properly sorted blocks
-      await loadData();
+      Alert.alert('Success', `${copiedBlocks.length} blocks have been copied!`);
     } catch (error) {
-      console.error('Error copying yesterday\'s plan:', error);
-      Alert.alert('Error', 'Failed to copy yesterday\'s plan. Please try again.');
+      console.error('Error copying blocks:', error);
+      Alert.alert('Error', 'Failed to copy blocks. Please try again.');
     }
   };
 
@@ -210,7 +260,7 @@ export default function TodayScreen() {
   };
 
   const handleNotificationsPress = () => {
-    Alert.alert('Notifications', 'You have 3 upcoming focus sessions today!');
+    Alert.alert('Notifications', `You have ${blocks.length} blocks scheduled for ${formatDate(selectedDate)}!`);
   };
 
   const getTodayStats = () => {
@@ -234,17 +284,14 @@ export default function TodayScreen() {
 
   const stats = getTodayStats();
   const currentHour = currentTime.getHours();
-  const todayDate = currentTime.toLocaleDateString('en-US', { 
-    weekday: 'long', 
-    month: 'long', 
-    day: 'numeric' 
-  });
 
   const getGreeting = () => {
     if (currentHour < 12) return 'Good Morning';
     if (currentHour < 17) return 'Good Afternoon';
     return 'Good Evening';
   };
+
+  const isToday = selectedDate === getTodayDateString();
 
   const styles = StyleSheet.create({
     container: {
@@ -271,6 +318,30 @@ export default function TodayScreen() {
       shadowOpacity: 0.2,
       shadowRadius: 4,
       elevation: 3,
+    },
+    dateNavigation: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: 16,
+      marginBottom: 8,
+    },
+    navButton: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.surface,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    dateTitle: {
+      fontSize: Math.min(20, screenWidth * 0.05),
+      fontWeight: '700',
+      color: colors.text,
+      textAlign: 'center',
+      flex: 1,
     },
     currentTimeContainer: {
       alignItems: 'center',
@@ -414,8 +485,8 @@ export default function TodayScreen() {
     <SafeAreaView style={styles.container}>
       {/* Action Bar Header */}
       <MobileHeader
-        title={getGreeting()}
-        subtitle={todayDate}
+        title={isToday ? getGreeting() : formatDate(selectedDate)}
+        subtitle={isToday ? formatDate(selectedDate) : `${blocks.length} blocks scheduled`}
         showNotifications={true}
         onNotificationsPress={handleNotificationsPress}
         rightComponent={
@@ -427,16 +498,37 @@ export default function TodayScreen() {
 
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.content}>
-          {/* Current Time */}
-          <View style={styles.currentTimeContainer}>
-            <Text style={styles.currentTime}>
-              {formatTime12Hour(currentTime.toLocaleTimeString('en-US', { 
-                hour: '2-digit', 
-                minute: '2-digit',
-                hour12: false 
-              }))}
-            </Text>
+          {/* Date Navigation */}
+          <View style={styles.dateNavigation}>
+            <TouchableOpacity 
+              style={styles.navButton}
+              onPress={() => navigateDate('prev')}
+            >
+              <ChevronLeft size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+            
+            <Text style={styles.dateTitle}>{formatDate(selectedDate)}</Text>
+            
+            <TouchableOpacity 
+              style={styles.navButton}
+              onPress={() => navigateDate('next')}
+            >
+              <ChevronRight size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
           </View>
+
+          {/* Current Time - Only show for today */}
+          {isToday && (
+            <View style={styles.currentTimeContainer}>
+              <Text style={styles.currentTime}>
+                {formatTime12Hour(currentTime.toLocaleTimeString('en-US', { 
+                  hour: '2-digit', 
+                  minute: '2-digit',
+                  hour12: false 
+                }))}
+              </Text>
+            </View>
+          )}
 
           {/* Stats Cards */}
           <View style={styles.statsContainer}>
@@ -454,7 +546,7 @@ export default function TodayScreen() {
 
           {/* Time Blocks */}
           <View style={styles.blocksContainer}>
-            <Text style={styles.sectionTitle}>Today's Schedule</Text>
+            <Text style={styles.sectionTitle}>{formatDate(selectedDate)}'s Schedule</Text>
             
             {blocks.length > 0 && (
               <View style={styles.swipeHint}>
@@ -470,7 +562,12 @@ export default function TodayScreen() {
             {blocks.length === 0 ? (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyText}>No time blocks scheduled</Text>
-                <Text style={styles.emptySubtext}>Tap the + button to create your first block</Text>
+                <Text style={styles.emptySubtext}>
+                  {isToday 
+                    ? 'Tap the + button to create your first block for today'
+                    : `Create blocks for ${formatDate(selectedDate)} using the + button`
+                  }
+                </Text>
               </View>
             ) : (
               blocks.map((block) => (
@@ -491,9 +588,11 @@ export default function TodayScreen() {
             <TouchableOpacity style={styles.createBlockButton} onPress={handleCreateCustomBlock}>
               <Text style={styles.createBlockText}>Create New Block</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.quickActionButton} onPress={handleAddQuickBlock}>
-              <Text style={styles.quickActionText}>Add Quick Block</Text>
-            </TouchableOpacity>
+            {isToday && (
+              <TouchableOpacity style={styles.quickActionButton} onPress={handleAddQuickBlock}>
+                <Text style={styles.quickActionText}>Add Quick Block</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity 
               style={[styles.quickActionButton, styles.secondaryAction]}
               onPress={handleCopyYesterday}
