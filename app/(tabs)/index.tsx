@@ -124,16 +124,26 @@ export default function TodayScreen() {
     );
   };
 
-  const handleStartFocus = (block: TimeBlockData) => {
-    setActiveBlockId(block.id);
-    // Update block as active
-    const updatedBlocks = allBlocks.map(b => 
-      b.id === block.id 
-        ? { ...b, isActive: true }
-        : { ...b, isActive: false }
-    );
-    setAllBlocks(updatedBlocks);
-    saveTimeBlocks(updatedBlocks);
+  const handleStartFocus = async (block: TimeBlockData) => {
+    try {
+      setActiveBlockId(block.id);
+      
+      // Update block as active and deactivate others
+      const updatedBlocks = allBlocks.map(b => 
+        b.id === block.id 
+          ? { ...b, isActive: true }
+          : { ...b, isActive: false }
+      );
+      
+      setAllBlocks(updatedBlocks);
+      await saveTimeBlocks(updatedBlocks);
+      
+      // Navigate to focus tab
+      router.push('/(tabs)/focus');
+    } catch (error) {
+      console.error('Error starting focus:', error);
+      Alert.alert('Error', 'Failed to start focus session. Please try again.');
+    }
   };
 
   const handleDeleteBlock = async (blockId: string) => {

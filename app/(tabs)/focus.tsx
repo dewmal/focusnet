@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Alert, ScrollView, Dimensions, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Coffee, Zap, CircleCheck as CheckCircle, Clock, TrendingUp, Target, Plus, Pause, Play } from 'lucide-react-native';
@@ -23,7 +23,7 @@ export default function FocusScreen() {
 
   // Load data when screen comes into focus
   useFocusEffect(
-    React.useCallback(() => {
+    useCallback(() => {
       loadData();
     }, [])
   );
@@ -163,20 +163,19 @@ export default function FocusScreen() {
   const handleStopFocus = async () => {
     if (activeBlock) {
       Alert.alert(
-        'Stop Focus Session',
-        'Do you want to stop this focus session? You can resume it later.',
+        'Pause Focus Session',
+        'Do you want to pause this focus session? You can resume it later.',
         [
           { text: 'Cancel', style: 'cancel' },
           { 
-            text: 'Stop', 
-            style: 'destructive',
+            text: 'Pause', 
             onPress: async () => {
               try {
                 // Keep the block as active but exit focus mode
                 setIsInFocusMode(false);
                 // Don't change the active block state - it remains active for resuming
               } catch (error) {
-                console.error('Error stopping focus:', error);
+                console.error('Error pausing focus:', error);
               }
             }
           }
