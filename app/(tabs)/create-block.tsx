@@ -134,6 +134,17 @@ export default function CreateBlockScreen() {
     return Object.keys(newErrors).length === 0;
   };
 
+  const clearForm = () => {
+    setTitle('');
+    setStartHour(9);
+    setStartMinute(0);
+    setStartPeriod('AM');
+    setSelectedDuration(60);
+    setTasks(['']);
+    setErrors({});
+    // Keep selected category and color for convenience
+  };
+
   const handleSave = async () => {
     if (!validateForm()) return;
 
@@ -165,7 +176,10 @@ export default function CreateBlockScreen() {
       const updatedBlocks = [...existingBlocks, blockData];
       await saveTimeBlocks(updatedBlocks);
       
-      // Immediately navigate back without showing alert
+      // Clear form after successful save
+      clearForm();
+      
+      // Navigate back immediately
       router.back();
       
     } catch (error) {
@@ -177,6 +191,7 @@ export default function CreateBlockScreen() {
   };
 
   const handleCancel = () => {
+    clearForm();
     router.back();
   };
 

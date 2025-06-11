@@ -32,15 +32,8 @@ export default function TodayScreen() {
 
   const loadData = async () => {
     const savedBlocks = await loadTimeBlocks();
-    // Sort blocks by start time
-    const sortedBlocks = savedBlocks.sort((a, b) => {
-      const timeA = a.startTime.split(':').map(Number);
-      const timeB = b.startTime.split(':').map(Number);
-      const minutesA = timeA[0] * 60 + timeA[1];
-      const minutesB = timeB[0] * 60 + timeB[1];
-      return minutesA - minutesB;
-    });
-    setBlocks(sortedBlocks);
+    // Blocks are already sorted by the storage utility
+    setBlocks(savedBlocks);
   };
 
   const handleBlockPress = (block: TimeBlockData) => {
@@ -58,6 +51,18 @@ export default function TodayScreen() {
     );
     setBlocks(updatedBlocks);
     saveTimeBlocks(updatedBlocks);
+  };
+
+  const handleDeleteBlock = async (blockId: string) => {
+    try {
+      const updatedBlocks = blocks.filter(block => block.id !== blockId);
+      setBlocks(updatedBlocks);
+      await saveTimeBlocks(updatedBlocks);
+      Alert.alert('Success', 'Time block has been deleted!');
+    } catch (error) {
+      console.error('Error deleting block:', error);
+      Alert.alert('Error', 'Failed to delete time block. Please try again.');
+    }
   };
 
   const handleAddQuickBlock = () => {
@@ -94,19 +99,14 @@ export default function TodayScreen() {
       };
 
       const updatedBlocks = [...blocks, newBlock];
-      // Sort the updated blocks by time before saving
-      const sortedBlocks = updatedBlocks.sort((a, b) => {
-        const timeA = a.startTime.split(':').map(Number);
-        const timeB = b.startTime.split(':').map(Number);
-        const minutesA = timeA[0] * 60 + timeA[1];
-        const minutesB = timeB[0] * 60 + timeB[1];
-        return minutesA - minutesB;
-      });
-      
-      setBlocks(sortedBlocks);
-      await saveTimeBlocks(sortedBlocks);
+      // Storage utility will handle sorting
+      setBlocks(updatedBlocks);
+      await saveTimeBlocks(updatedBlocks);
       
       Alert.alert('Success', `Quick ${duration}-minute block has been added!`);
+      
+      // Reload to get properly sorted blocks
+      await loadData();
     } catch (error) {
       console.error('Error creating quick block:', error);
       Alert.alert('Error', 'Failed to create quick block. Please try again.');
@@ -136,19 +136,14 @@ export default function TodayScreen() {
       }));
 
       const updatedBlocks = [...blocks, ...copiedBlocks];
-      // Sort the updated blocks by time before saving
-      const sortedBlocks = updatedBlocks.sort((a, b) => {
-        const timeA = a.startTime.split(':').map(Number);
-        const timeB = b.startTime.split(':').map(Number);
-        const minutesA = timeA[0] * 60 + timeA[1];
-        const minutesB = timeB[0] * 60 + timeB[1];
-        return minutesA - minutesB;
-      });
-      
-      setBlocks(sortedBlocks);
-      await saveTimeBlocks(sortedBlocks);
+      // Storage utility will handle sorting
+      setBlocks(updatedBlocks);
+      await saveTimeBlocks(updatedBlocks);
       
       Alert.alert('Success', `${copiedBlocks.length} blocks have been copied from yesterday!`);
+      
+      // Reload to get properly sorted blocks
+      await loadData();
     } catch (error) {
       console.error('Error copying yesterday\'s plan:', error);
       Alert.alert('Error', 'Failed to copy yesterday\'s plan. Please try again.');
@@ -339,6 +334,20 @@ export default function TodayScreen() {
       fontSize: 16,
       fontWeight: '600',
     },
+    swipeHint: {
+      backgroundColor: colors.surface,
+      padding: 12,
+      borderRadius: 8,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    swipeHintText: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      textAlign: 'center',
+      fontStyle: 'italic',
+    },
   });
 
   return (
@@ -386,6 +395,15 @@ export default function TodayScreen() {
           {/* Time Blocks */}
           <View style={styles.blocksContainer}>
             <Text style={styles.sectionTitle}>Today's Schedule</Text>
+            
+            {blocks.length > 0 && (
+              <View style={styles.swipeHint}>
+                <Text style={styles.swipeHintText}>
+                  💡 Swipe left on any block to delete it
+                </Text>
+              </View>
+            )}
+            
             {blocks.length === 0 ? (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyText}>No time blocks scheduled</Text>
@@ -398,6 +416,7 @@ export default function TodayScreen() {
                   block={block}
                   onPress={() => handleBlockPress(block)}
                   onStartFocus={() => handleStartFocus(block)}
+                  onDelete={handleDeleteBlock}
                 />
               ))
             )}
