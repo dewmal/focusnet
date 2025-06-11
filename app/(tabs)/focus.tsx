@@ -26,6 +26,8 @@ export default function FocusScreen() {
   useFocusEffect(
     useCallback(() => {
       loadData();
+      // Also check focus mode state when screen comes into focus
+      checkFocusMode();
     }, [])
   );
 
@@ -33,11 +35,26 @@ export default function FocusScreen() {
     loadData();
   }, []);
 
-  // Update focus mode state in AsyncStorage
+  // Check focus mode state
+  const checkFocusMode = async () => {
+    try {
+      const focusMode = await AsyncStorage.getItem('isInFocusMode');
+      setIsInFocusMode(focusMode === 'true');
+    } catch (error) {
+      console.error('Error checking focus mode:', error);
+    }
+  };
+
+  // Update focus mode state in AsyncStorage and local state
   const updateFocusMode = async (inFocus: boolean) => {
     try {
       await AsyncStorage.setItem('isInFocusMode', inFocus.toString());
       setIsInFocusMode(inFocus);
+      
+      // Force a small delay to ensure AsyncStorage is updated
+      setTimeout(() => {
+        console.log('Focus mode updated to:', inFocus);
+      }, 100);
     } catch (error) {
       console.error('Error updating focus mode:', error);
     }

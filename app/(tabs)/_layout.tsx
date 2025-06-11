@@ -2,12 +2,13 @@ import { Tabs } from 'expo-router';
 import { Calendar, Focus, Clock, Settings, BookOpen, Chrome as Home } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function TabLayout() {
   const [isInFocusMode, setIsInFocusMode] = useState(false);
 
-  useEffect(() => {
-    // Listen for focus mode changes
+  // Use useFocusEffect to check focus mode when tab comes into focus
+  useFocusEffect(() => {
     const checkFocusMode = async () => {
       try {
         const focusMode = await AsyncStorage.getItem('isInFocusMode');
@@ -17,14 +18,31 @@ export default function TabLayout() {
       }
     };
 
+    checkFocusMode();
+  });
+
+  useEffect(() => {
+    // Listen for focus mode changes with more frequent checking
+    const checkFocusMode = async () => {
+      try {
+        const focusMode = await AsyncStorage.getItem('isInFocusMode');
+        const newFocusMode = focusMode === 'true';
+        if (newFocusMode !== isInFocusMode) {
+          setIsInFocusMode(newFocusMode);
+        }
+      } catch (error) {
+        console.error('Error checking focus mode:', error);
+      }
+    };
+
     // Check initially
     checkFocusMode();
 
-    // Set up interval to check for changes
-    const interval = setInterval(checkFocusMode, 1000);
+    // Set up interval to check for changes more frequently
+    const interval = setInterval(checkFocusMode, 500); // Check every 500ms
 
     return () => clearInterval(interval);
-  }, []);
+  }, [isInFocusMode]);
 
   return (
     <Tabs
