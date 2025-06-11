@@ -80,7 +80,7 @@ export default function FocusTimer({
 
       const timeout = setTimeout(() => {
         setShowControls(false);
-      }, 8000); // Increased timeout to 8 seconds
+      }, 8000);
 
       setControlsTimeout(timeout);
     }
@@ -252,7 +252,8 @@ export default function FocusTimer({
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: 24,
-      paddingTop: 120, // Account for header
+      paddingTop: 120,
+      paddingBottom: 180, // Make room for bottom panel
     },
     titleContainer: {
       alignItems: 'center',
@@ -341,33 +342,39 @@ export default function FocusTimer({
       color: 'rgba(255, 255, 255, 0.7)',
       fontWeight: '600',
     },
+    // RIGHT SIDE CONTROLS TOGGLE
     controlsToggle: {
       position: 'absolute',
-      bottom: 100,
-      alignSelf: 'center',
+      right: 20,
+      top: '50%',
+      transform: [{ translateY: -25 }],
       backgroundColor: 'rgba(255, 255, 255, 0.15)',
-      paddingHorizontal: 24,
-      paddingVertical: 14,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
       borderRadius: 25,
       borderWidth: 1,
       borderColor: 'rgba(255, 255, 255, 0.2)',
+      zIndex: 999,
     },
     controlsToggleText: {
-      fontSize: 14,
+      fontSize: 12,
       color: 'rgba(255, 255, 255, 0.8)',
       fontWeight: '600',
+      textAlign: 'center',
     },
+    // FLOATING CONTROLS
     controls: {
       position: 'absolute',
-      bottom: 100,
-      flexDirection: 'row',
+      right: 20,
+      top: '50%',
+      transform: [{ translateY: -60 }],
+      flexDirection: 'column',
       alignItems: 'center',
-      gap: 20,
-      alignSelf: 'center',
+      gap: 16,
       backgroundColor: 'rgba(0, 0, 0, 0.95)',
-      paddingHorizontal: 28,
-      paddingVertical: 18,
-      borderRadius: 35,
+      paddingHorizontal: 16,
+      paddingVertical: 20,
+      borderRadius: 30,
       borderWidth: 1,
       borderColor: 'rgba(255, 255, 255, 0.2)',
       shadowColor: '#000',
@@ -375,6 +382,7 @@ export default function FocusTimer({
       shadowOpacity: 0.3,
       shadowRadius: 8,
       elevation: 8,
+      zIndex: 999,
     },
     controlButton: {
       width: 50,
@@ -384,9 +392,6 @@ export default function FocusTimer({
       justifyContent: 'center',
     },
     primaryButton: {
-      width: 60,
-      height: 60,
-      borderRadius: 30,
       backgroundColor: blockColor,
       shadowColor: blockColor,
       shadowOffset: { width: 0, height: 2 },
@@ -404,16 +409,27 @@ export default function FocusTimer({
       borderWidth: 1,
       borderColor: 'rgba(255, 184, 0, 0.4)',
     },
-    motivationContainer: {
+    closeControlsButton: {
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    // BOTTOM PANEL FOR MOTIVATION
+    bottomPanel: {
       position: 'absolute',
-      bottom: 200,
-      alignSelf: 'center',
-      paddingHorizontal: 40,
-      maxWidth: screenWidth * 0.85,
+      bottom: 0,
+      left: 0,
+      right: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.95)',
+      borderTopWidth: 1,
+      borderTopColor: 'rgba(255, 255, 255, 0.1)',
+      paddingHorizontal: 24,
+      paddingVertical: 20,
+      paddingBottom: 40,
     },
     motivationText: {
       fontSize: 14,
-      color: 'rgba(255, 255, 255, 0.5)',
+      color: 'rgba(255, 255, 255, 0.6)',
       fontStyle: 'italic',
       textAlign: 'center',
       lineHeight: 20,
@@ -421,7 +437,7 @@ export default function FocusTimer({
     },
     completedContainer: {
       position: 'absolute',
-      bottom: 80,
+      bottom: 100,
       alignSelf: 'center',
       backgroundColor: 'rgba(76, 175, 80, 0.2)',
       paddingHorizontal: 32,
@@ -497,12 +513,6 @@ export default function FocusTimer({
             </Text>
           </View>
         </View>
-
-        <View style={styles.motivationContainer}>
-          <Text style={styles.motivationText}>
-            "{getMotivationalQuote()}"
-          </Text>
-        </View>
       </View>
 
       {/* Session Complete Message */}
@@ -514,49 +524,56 @@ export default function FocusTimer({
         </View>
       )}
 
-      {/* Controls Toggle Button */}
+      {/* RIGHT SIDE CONTROLS TOGGLE */}
       {!showControls && timeLeft > 0 && (
         <TouchableOpacity
           style={styles.controlsToggle}
           onPress={() => setShowControls(true)}
           activeOpacity={0.7}
         >
-          <Text style={styles.controlsToggleText}>Tap for controls</Text>
+          <Text style={styles.controlsToggleText}>Controls</Text>
         </TouchableOpacity>
       )}
 
-      {/* Enhanced Controls */}
+      {/* RIGHT SIDE FLOATING CONTROLS */}
       {showControls && timeLeft > 0 && (
         <View style={styles.controls}>
-          <TouchableOpacity
-            style={[styles.controlButton, styles.resetButton]}
-            onPress={resetTimer}
-            activeOpacity={0.7}
-          >
-            <RotateCcw size={18} color="#FFB800" />
-          </TouchableOpacity>
-
           <TouchableOpacity
             style={[styles.controlButton, styles.primaryButton]}
             onPress={toggleTimer}
             activeOpacity={0.7}
           >
             {isPaused ? (
-              <Play size={24} color="white" />
+              <Play size={20} color="white" />
             ) : (
-              <Pause size={24} color="white" />
+              <Pause size={20} color="white" />
             )}
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.controlButton, styles.secondaryButton]}
+            style={[styles.controlButton, styles.resetButton]}
+            onPress={resetTimer}
+            activeOpacity={0.7}
+          >
+            <RotateCcw size={16} color="#FFB800" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.controlButton, styles.closeControlsButton]}
             onPress={() => setShowControls(false)}
             activeOpacity={0.7}
           >
-            <X size={18} color="rgba(255, 255, 255, 0.7)" />
+            <X size={16} color="rgba(255, 255, 255, 0.7)" />
           </TouchableOpacity>
         </View>
       )}
+
+      {/* BOTTOM PANEL WITH MOTIVATIONAL QUOTE */}
+      <View style={styles.bottomPanel}>
+        <Text style={styles.motivationText}>
+          "{getMotivationalQuote()}"
+        </Text>
+      </View>
     </View>
   );
 }

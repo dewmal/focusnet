@@ -12,6 +12,8 @@ export default function TabLayout() {
           paddingTop: 8,
           paddingBottom: 8,
           height: 80,
+          // Hide tab bar when in focus mode
+          display: 'flex',
         },
         tabBarActiveTintColor: '#FF6B35',
         tabBarInactiveTintColor: '#8B7355',

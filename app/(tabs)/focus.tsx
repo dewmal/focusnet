@@ -547,6 +547,7 @@ export default function FocusScreen() {
     },
   });
 
+  // HIDE TAB BAR IN FOCUS MODE
   if (isInFocusMode && activeBlock) {
     return (
       <View style={styles.focusContainer}>
