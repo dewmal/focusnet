@@ -224,6 +224,12 @@ export const addSampleData = async (): Promise<boolean> => {
     await saveCategories(getDefaultCategories());
     await saveSettings(getDefaultSettings());
     
+    // Add sample reflections for completed blocks
+    const sampleReflections = getDefaultReflections();
+    for (const reflection of sampleReflections) {
+      await saveReflection(reflection);
+    }
+    
     console.log('Sample data added successfully');
     return true;
   } catch (error) {
@@ -312,13 +318,58 @@ const getDefaultSettings = (): AppSettings => ({
 
 const getDefaultBlocks = (): TimeBlockData[] => {
   const today = getTodayDateString();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayString = yesterday.toISOString().split('T')[0];
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   const tomorrowString = tomorrow.toISOString().split('T')[0];
   
   return [
+    // Yesterday's completed blocks
     {
-      id: '1',
+      id: 'yesterday-1',
+      title: 'Morning Planning Session',
+      date: yesterdayString,
+      startTime: '08:30',
+      endTime: '09:30',
+      category: 'Admin',
+      color: '#2E8B8B',
+      tasks: ['Review weekly goals', 'Plan daily priorities', 'Check calendar'],
+      isActive: false,
+      isCompleted: true,
+      progress: 100,
+    },
+    {
+      id: 'yesterday-2',
+      title: 'Deep Work - Feature Development',
+      date: yesterdayString,
+      startTime: '10:00',
+      endTime: '12:00',
+      category: 'Creative',
+      color: '#FF6B35',
+      tasks: ['Implement user authentication', 'Write unit tests', 'Code review'],
+      isActive: false,
+      isCompleted: true,
+      progress: 100,
+    },
+    {
+      id: 'yesterday-3',
+      title: 'Learning Session',
+      date: yesterdayString,
+      startTime: '14:00',
+      endTime: '15:30',
+      category: 'Learning',
+      color: '#4F8B3B',
+      tasks: ['React Native tutorial', 'Practice animations', 'Take notes'],
+      isActive: false,
+      isCompleted: true,
+      progress: 100,
+    },
+    
+    // Today's blocks (mix of completed and pending)
+    {
+      id: 'today-1',
       title: 'Morning Deep Work',
       date: today,
       startTime: '09:00',
@@ -327,11 +378,11 @@ const getDefaultBlocks = (): TimeBlockData[] => {
       color: '#FF6B35',
       tasks: ['Review project requirements', 'Design system architecture'],
       isActive: false,
-      isCompleted: false,
-      progress: 0,
+      isCompleted: true,
+      progress: 100,
     },
     {
-      id: '2',
+      id: 'today-2',
       title: 'Team Standup',
       date: today,
       startTime: '11:00',
@@ -340,11 +391,11 @@ const getDefaultBlocks = (): TimeBlockData[] => {
       color: '#2E8B8B',
       tasks: ['Share yesterday progress', 'Discuss blockers'],
       isActive: false,
-      isCompleted: false,
-      progress: 0,
+      isCompleted: true,
+      progress: 100,
     },
     {
-      id: '3',
+      id: 'today-3',
       title: 'Focused Coding',
       date: today,
       startTime: '13:00',
@@ -357,7 +408,7 @@ const getDefaultBlocks = (): TimeBlockData[] => {
       progress: 0,
     },
     {
-      id: '4',
+      id: 'today-4',
       title: 'Email & Communications',
       date: today,
       startTime: '15:00',
@@ -370,14 +421,55 @@ const getDefaultBlocks = (): TimeBlockData[] => {
       progress: 0,
     },
     {
-      id: '5',
-      title: 'Planning Session',
+      id: 'today-5',
+      title: 'Personal Development',
+      date: today,
+      startTime: '16:00',
+      endTime: '17:00',
+      category: 'Personal',
+      color: '#8B4F9F',
+      tasks: ['Read productivity articles', 'Plan weekend goals'],
+      isActive: false,
+      isCompleted: false,
+      progress: 0,
+    },
+    
+    // Tomorrow's planned blocks
+    {
+      id: 'tomorrow-1',
+      title: 'Weekly Planning Session',
       date: tomorrowString,
-      startTime: '10:00',
-      endTime: '11:30',
+      startTime: '09:00',
+      endTime: '10:00',
       category: 'Admin',
       color: '#2E8B8B',
-      tasks: ['Plan next sprint', 'Review backlog'],
+      tasks: ['Review last week', 'Set weekly goals', 'Plan major tasks'],
+      isActive: false,
+      isCompleted: false,
+      progress: 0,
+    },
+    {
+      id: 'tomorrow-2',
+      title: 'Creative Project Work',
+      date: tomorrowString,
+      startTime: '10:30',
+      endTime: '12:30',
+      category: 'Creative',
+      color: '#FF6B35',
+      tasks: ['Design new features', 'Create wireframes', 'User research'],
+      isActive: false,
+      isCompleted: false,
+      progress: 0,
+    },
+    {
+      id: 'tomorrow-3',
+      title: 'Health & Wellness',
+      date: tomorrowString,
+      startTime: '18:00',
+      endTime: '19:00',
+      category: 'Health',
+      color: '#B85C38',
+      tasks: ['Evening workout', 'Meditation session', 'Meal prep'],
       isActive: false,
       isCompleted: false,
       progress: 0,
@@ -392,3 +484,51 @@ const getDefaultCategories = (): BlockCategory[] => [
   { id: '4', name: 'Learning', color: '#4F8B3B', icon: 'book' },
   { id: '5', name: 'Health', color: '#B85C38', icon: 'heart' },
 ];
+
+const getDefaultReflections = (): DailyReflection[] => {
+  const today = new Date().toDateString();
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterdayString = yesterday.toDateString();
+  
+  return [
+    // Yesterday's reflections
+    {
+      date: yesterdayString,
+      blockId: 'yesterday-1',
+      blockTitle: 'Morning Planning Session',
+      reflection: 'Great way to start the day! Having a clear plan made me feel more focused and productive. I was able to identify my top 3 priorities and felt confident about tackling them.',
+      rating: 5,
+    },
+    {
+      date: yesterdayString,
+      blockId: 'yesterday-2',
+      blockTitle: 'Deep Work - Feature Development',
+      reflection: 'Really productive session. I got into a good flow state and made significant progress on the authentication feature. The tests helped me catch a few edge cases early.',
+      rating: 4,
+    },
+    {
+      date: yesterdayString,
+      blockId: 'yesterday-3',
+      blockTitle: 'Learning Session',
+      reflection: 'The React Native tutorial was helpful, especially the animation examples. I feel more confident about implementing smooth transitions in the app. Taking notes helped me retain the concepts better.',
+      rating: 4,
+    },
+    
+    // Today's reflections (for completed blocks)
+    {
+      date: today,
+      blockId: 'today-1',
+      blockTitle: 'Morning Deep Work',
+      reflection: 'Excellent focus session! I was able to dive deep into the project requirements and came up with a solid system architecture. The morning is definitely my most productive time.',
+      rating: 5,
+    },
+    {
+      date: today,
+      blockId: 'today-2',
+      blockTitle: 'Team Standup',
+      reflection: 'Good team sync. Everyone shared their progress and we identified a few blockers that we can help each other with. The meeting stayed focused and on time.',
+      rating: 4,
+    },
+  ];
+};
