@@ -24,8 +24,6 @@ export default function FocusTimer({
   const [isRunning, setIsRunning] = useState(true);
   const [isPaused, setIsPaused] = useState(false);
   const [pulseAnim] = useState(new Animated.Value(1));
-  const [showControls, setShowControls] = useState(false);
-  const [controlsTimeout, setControlsTimeout] = useState<number | null>(null);
   const { colors } = useTheme();
 
   const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
@@ -72,26 +70,6 @@ export default function FocusTimer({
     if (isRunning && !isPaused) pulse();
   }, [isRunning, isPaused, pulseAnim]);
 
-  useEffect(() => {
-    if (showControls) {
-      if (controlsTimeout) {
-        clearTimeout(controlsTimeout);
-      }
-
-      const timeout = setTimeout(() => {
-        setShowControls(false);
-      }, 8000);
-
-      setControlsTimeout(timeout);
-    }
-
-    return () => {
-      if (controlsTimeout) {
-        clearTimeout(controlsTimeout);
-      }
-    };
-  }, [showControls]);
-
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -127,7 +105,6 @@ export default function FocusTimer({
             setTimeLeft(duration * 60);
             setIsRunning(true);
             setIsPaused(false);
-            setShowControls(false);
           }
         }
       ]
@@ -285,6 +262,7 @@ export default function FocusTimer({
       width: '100%',
       alignItems: 'center',
       maxWidth: 260,
+      marginBottom: 30,
     },
     progressBar: {
       width: '100%',
@@ -303,55 +281,27 @@ export default function FocusTimer({
       fontSize: 14,
       color: 'rgba(255, 255, 255, 0.7)',
       fontWeight: '600',
+      marginBottom: 20,
     },
-    // RIGHT SIDE CONTROLS TOGGLE
-    controlsToggle: {
-      position: 'absolute',
-      right: 20,
-      top: '50%',
-      transform: [{ translateY: -25 }],
-      backgroundColor: 'rgba(255, 255, 255, 0.15)',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      borderRadius: 25,
-      borderWidth: 1,
-      borderColor: 'rgba(255, 255, 255, 0.2)',
-      zIndex: 999,
-    },
-    controlsToggleText: {
-      fontSize: 12,
-      color: 'rgba(255, 255, 255, 0.8)',
-      fontWeight: '600',
-      textAlign: 'center',
-    },
-    // FLOATING CONTROLS
+    // CONTROLS BELOW PROGRESS
     controls: {
-      position: 'absolute',
-      right: 20,
-      top: '50%',
-      transform: [{ translateY: -80 }],
-      flexDirection: 'column',
+      flexDirection: 'row',
       alignItems: 'center',
-      gap: 16,
-      backgroundColor: 'rgba(0, 0, 0, 0.95)',
-      paddingHorizontal: 16,
-      paddingVertical: 20,
-      borderRadius: 30,
-      borderWidth: 1,
-      borderColor: 'rgba(255, 255, 255, 0.2)',
+      justifyContent: 'center',
+      gap: 20,
+      paddingHorizontal: 20,
+    },
+    controlButton: {
+      width: 56,
+      height: 56,
+      borderRadius: 28,
+      alignItems: 'center',
+      justifyContent: 'center',
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.3,
       shadowRadius: 8,
       elevation: 8,
-      zIndex: 999,
-    },
-    controlButton: {
-      width: 50,
-      height: 50,
-      borderRadius: 25,
-      alignItems: 'center',
-      justifyContent: 'center',
     },
     primaryButton: {
       backgroundColor: blockColor,
@@ -361,25 +311,15 @@ export default function FocusTimer({
       shadowRadius: 4,
       elevation: 4,
     },
-    secondaryButton: {
-      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-      borderWidth: 1,
-      borderColor: 'rgba(255, 255, 255, 0.2)',
-    },
     resetButton: {
       backgroundColor: 'rgba(255, 184, 0, 0.2)',
-      borderWidth: 1,
-      borderColor: 'rgba(255, 184, 0, 0.4)',
+      borderWidth: 2,
+      borderColor: 'rgba(255, 184, 0, 0.6)',
     },
     exitButton: {
       backgroundColor: 'rgba(255, 68, 68, 0.2)',
-      borderWidth: 1,
-      borderColor: 'rgba(255, 68, 68, 0.4)',
-    },
-    closeControlsButton: {
-      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-      borderWidth: 1,
-      borderColor: 'rgba(255, 255, 255, 0.2)',
+      borderWidth: 2,
+      borderColor: 'rgba(255, 68, 68, 0.6)',
     },
     // BOTTOM PANEL FOR MOTIVATION
     bottomPanel: {
@@ -460,6 +400,44 @@ export default function FocusTimer({
             <Text style={styles.progressText}>
               {Math.round(getProgress())}% Complete
             </Text>
+
+            {/* CONTROLS DIRECTLY BELOW PROGRESS */}
+            <View style={styles.controls}>
+              {/* Play/Pause Button */}
+              {timeLeft > 0 && (
+                <TouchableOpacity
+                  style={[styles.controlButton, styles.primaryButton]}
+                  onPress={toggleTimer}
+                  activeOpacity={0.7}
+                >
+                  {isPaused ? (
+                    <Play size={24} color="white" />
+                  ) : (
+                    <Pause size={24} color="white" />
+                  )}
+                </TouchableOpacity>
+              )}
+
+              {/* Reset Button */}
+              {timeLeft > 0 && (
+                <TouchableOpacity
+                  style={[styles.controlButton, styles.resetButton]}
+                  onPress={resetTimer}
+                  activeOpacity={0.7}
+                >
+                  <RotateCcw size={20} color="#FFB800" />
+                </TouchableOpacity>
+              )}
+
+              {/* Exit Button - Always Available */}
+              <TouchableOpacity
+                style={[styles.controlButton, styles.exitButton]}
+                onPress={handleExit}
+                activeOpacity={0.7}
+              >
+                <LogOut size={20} color="#FF4444" />
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </View>
@@ -468,68 +446,8 @@ export default function FocusTimer({
       {timeLeft <= 0 && (
         <View style={styles.completedContainer}>
           <Text style={styles.completedText}>
-            🎉 Session Complete! Use controls to exit.
+            🎉 Session Complete! Use exit button to continue.
           </Text>
-        </View>
-      )}
-
-      {/* RIGHT SIDE CONTROLS TOGGLE */}
-      {!showControls && (
-        <TouchableOpacity
-          style={styles.controlsToggle}
-          onPress={() => setShowControls(true)}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.controlsToggleText}>Controls</Text>
-        </TouchableOpacity>
-      )}
-
-      {/* RIGHT SIDE FLOATING CONTROLS */}
-      {showControls && (
-        <View style={styles.controls}>
-          {/* Play/Pause Button */}
-          {timeLeft > 0 && (
-            <TouchableOpacity
-              style={[styles.controlButton, styles.primaryButton]}
-              onPress={toggleTimer}
-              activeOpacity={0.7}
-            >
-              {isPaused ? (
-                <Play size={20} color="white" />
-              ) : (
-                <Pause size={20} color="white" />
-              )}
-            </TouchableOpacity>
-          )}
-
-          {/* Reset Button */}
-          {timeLeft > 0 && (
-            <TouchableOpacity
-              style={[styles.controlButton, styles.resetButton]}
-              onPress={resetTimer}
-              activeOpacity={0.7}
-            >
-              <RotateCcw size={16} color="#FFB800" />
-            </TouchableOpacity>
-          )}
-
-          {/* Exit Button */}
-          <TouchableOpacity
-            style={[styles.controlButton, styles.exitButton]}
-            onPress={handleExit}
-            activeOpacity={0.7}
-          >
-            <LogOut size={18} color="#FF4444" />
-          </TouchableOpacity>
-
-          {/* Close Controls Button */}
-          <TouchableOpacity
-            style={[styles.controlButton, styles.closeControlsButton]}
-            onPress={() => setShowControls(false)}
-            activeOpacity={0.7}
-          >
-            <X size={16} color="rgba(255, 255, 255, 0.7)" />
-          </TouchableOpacity>
         </View>
       )}
 
