@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Alert, ScrollView, Dimensions, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowLeft, Coffee, Zap, CircleCheck as CheckCircle, Clock, TrendingUp, Target, Plus } from 'lucide-react-native';
+import { ArrowLeft, Coffee, Zap, CircleCheck as CheckCircle, Clock, TrendingUp, Target, Plus, Pause, Play } from 'lucide-react-native';
 import { router } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import FocusTimer from '@/components/FocusTimer';
 import MobileHeader from '@/components/MobileHeader';
 import { loadTimeBlocks, saveTimeBlocks, filterBlocksByDate, getTodayDateString } from '@/utils/storage';
@@ -14,25 +15,54 @@ export default function FocusScreen() {
   const [isInFocusMode, setIsInFocusMode] = useState(false);
   const [allBlocks, setAllBlocks] = useState<TimeBlockData[]>([]);
   const [todayBlocks, setTodayBlocks] = useState<TimeBlockData[]>([]);
+  const [upcomingBlocks, setUpcomingBlocks] = useState<TimeBlockData[]>([]);
+  const [completedBlocks, setCompletedBlocks] = useState<TimeBlockData[]>([]);
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const screenWidth = Dimensions.get('window').width;
+
+  // Load data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      loadData();
+    }, [])
+  );
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
-    const savedBlocks = await loadTimeBlocks();
-    setAllBlocks(savedBlocks);
-    
-    const today = getTodayDateString();
-    const todayFilteredBlocks = filterBlocksByDate(savedBlocks, today);
-    setTodayBlocks(todayFilteredBlocks);
-    
-    const currentActive = savedBlocks.find(block => block.isActive);
-    if (currentActive) {
-      setActiveBlock(currentActive);
+    try {
+      const savedBlocks = await loadTimeBlocks();
+      setAllBlocks(savedBlocks);
+      
+      const today = getTodayDateString();
+      const todayFilteredBlocks = filterBlocksByDate(savedBlocks, today);
+      setTodayBlocks(todayFilteredBlocks);
+      
+      // Find current active block
+      const currentActive = savedBlocks.find(block => block.isActive);
+      if (currentActive) {
+        setActiveBlock(currentActive);
+      }
+
+      // Get upcoming blocks (not completed, not active, from today and future)
+      const upcoming = savedBlocks.filter(block => {
+        const blockDate = new Date(block.date);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        blockDate.setHours(0, 0, 0, 0);
+        
+        return !block.isCompleted && !block.isActive && blockDate >= today;
+      }).slice(0, 5);
+      setUpcomingBlocks(upcoming);
+
+      // Get completed blocks for today
+      const completed = todayFilteredBlocks.filter(block => block.isCompleted);
+      setCompletedBlocks(completed);
+    } catch (error) {
+      console.error('Error loading data:', error);
     }
   };
 
@@ -48,16 +78,21 @@ export default function FocusScreen() {
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
 
     // Reset time for comparison
     const blockDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const tomorrowDate = new Date(tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate());
+    const yesterdayDate = new Date(yesterday.getFullYear(), yesterday.getMonth(), yesterday.getDate());
 
     if (blockDate.getTime() === todayDate.getTime()) {
       return 'Today';
     } else if (blockDate.getTime() === tomorrowDate.getTime()) {
       return 'Tomorrow';
+    } else if (blockDate.getTime() === yesterdayDate.getTime()) {
+      return 'Yesterday';
     } else {
       return date.toLocaleDateString('en-US', { 
         weekday: 'short', 
@@ -67,48 +102,123 @@ export default function FocusScreen() {
     }
   };
 
-  const handleStartFocus = (block: TimeBlockData) => {
-    setActiveBlock(block);
-    setIsInFocusMode(true);
-    
-    // Update block status
-    const updatedBlocks = allBlocks.map(b => 
-      b.id === block.id 
-        ? { ...b, isActive: true }
-        : { ...b, isActive: false }
-    );
-    setAllBlocks(updatedBlocks);
-    setTodayBlocks(filterBlocksByDate(updatedBlocks, getTodayDateString()));
-    saveTimeBlocks(updatedBlocks);
+  const handleStartFocus = async (block: TimeBlockData) => {
+    try {
+      // Set this block as active and deactivate others
+      const updatedBlocks = allBlocks.map(b => 
+        b.id === block.id 
+          ? { ...b, isActive: true }
+          : { ...b, isActive: false }
+      );
+      
+      setAllBlocks(updatedBlocks);
+      setActiveBlock(block);
+      setIsInFocusMode(true);
+      
+      await saveTimeBlocks(updatedBlocks);
+      
+      // Reload data to update all states
+      await loadData();
+    } catch (error) {
+      console.error('Error starting focus:', error);
+      Alert.alert('Error', 'Failed to start focus session. Please try again.');
+    }
   };
 
-  const handleFocusComplete = () => {
+  const handleResumeFocus = () => {
+    if (activeBlock) {
+      setIsInFocusMode(true);
+    }
+  };
+
+  const handleFocusComplete = async () => {
+    if (activeBlock) {
+      try {
+        const updatedBlocks = allBlocks.map(b => 
+          b.id === activeBlock.id 
+            ? { ...b, isActive: false, isCompleted: true, progress: 100 }
+            : b
+        );
+        
+        setAllBlocks(updatedBlocks);
+        await saveTimeBlocks(updatedBlocks);
+        
+        setIsInFocusMode(false);
+        setActiveBlock(null);
+        
+        // Reload data to update all states
+        await loadData();
+        
+        Alert.alert(
+          '🎉 Focus Session Complete!',
+          `Great job completing your "${activeBlock.title}" session!`,
+          [{ text: 'Awesome!', onPress: () => {} }]
+        );
+      } catch (error) {
+        console.error('Error completing focus:', error);
+      }
+    }
+  };
+
+  const handleStopFocus = async () => {
     if (activeBlock) {
       Alert.alert(
-        '🎉 Focus Session Complete!',
-        `Great job completing your "${activeBlock.title}" session!`,
+        'Stop Focus Session',
+        'Do you want to stop this focus session? You can resume it later.',
         [
-          { text: 'Take a Break', onPress: handleEndFocus },
-          { text: 'Continue Working', onPress: handleEndFocus }
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Stop', 
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                // Keep the block as active but exit focus mode
+                setIsInFocusMode(false);
+                // Don't change the active block state - it remains active for resuming
+              } catch (error) {
+                console.error('Error stopping focus:', error);
+              }
+            }
+          }
         ]
       );
     }
   };
 
-  const handleEndFocus = () => {
+  const handleEndFocus = async () => {
     if (activeBlock) {
-      const updatedBlocks = allBlocks.map(b => 
-        b.id === activeBlock.id 
-          ? { ...b, isActive: false, isCompleted: true, progress: 100 }
-          : b
+      Alert.alert(
+        'End Focus Session',
+        'Do you want to end this focus session permanently? This will mark it as incomplete.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'End Session', 
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                const updatedBlocks = allBlocks.map(b => 
+                  b.id === activeBlock.id 
+                    ? { ...b, isActive: false, progress: 50 } // Mark as partially completed
+                    : b
+                );
+                
+                setAllBlocks(updatedBlocks);
+                await saveTimeBlocks(updatedBlocks);
+                
+                setIsInFocusMode(false);
+                setActiveBlock(null);
+                
+                // Reload data to update all states
+                await loadData();
+              } catch (error) {
+                console.error('Error ending focus:', error);
+              }
+            }
+          }
+        ]
       );
-      setAllBlocks(updatedBlocks);
-      setTodayBlocks(filterBlocksByDate(updatedBlocks, getTodayDateString()));
-      saveTimeBlocks(updatedBlocks);
     }
-    
-    setIsInFocusMode(false);
-    setActiveBlock(null);
   };
 
   const getBlockDuration = (block: TimeBlockData) => {
@@ -118,20 +228,17 @@ export default function FocusScreen() {
   };
 
   const getTodayStats = () => {
-    const completedBlocks = todayBlocks.filter(b => b.isCompleted);
+    const completedCount = completedBlocks.length;
     const totalBlocks = todayBlocks.length;
     const totalFocusTime = completedBlocks.reduce((acc, block) => {
       return acc + getBlockDuration(block);
     }, 0);
     
-    const averageRating = 4.2; // This would come from reflections in a real app
-    
     return {
-      completedSessions: completedBlocks.length,
+      completedSessions: completedCount,
       totalSessions: totalBlocks,
       totalFocusTime: Math.round(totalFocusTime),
-      averageRating,
-      completionRate: totalBlocks > 0 ? Math.round((completedBlocks.length / totalBlocks) * 100) : 0
+      completionRate: totalBlocks > 0 ? Math.round((completedCount / totalBlocks) * 100) : 0
     };
   };
 
@@ -139,17 +246,6 @@ export default function FocusScreen() {
     router.push('/create-block');
   };
 
-  // Get upcoming blocks (not completed, not active, from today and future)
-  const upcomingBlocks = allBlocks.filter(block => {
-    const blockDate = new Date(block.date);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    blockDate.setHours(0, 0, 0, 0);
-    
-    return !block.isCompleted && !block.isActive && blockDate >= today;
-  }).slice(0, 5); // Show max 5 upcoming blocks
-
-  const completedBlocks = todayBlocks.filter(block => block.isCompleted);
   const currentTime = new Date().toLocaleTimeString('en-US', { 
     hour: '2-digit', 
     minute: '2-digit',
@@ -267,7 +363,12 @@ export default function FocusScreen() {
       fontWeight: '500',
       marginBottom: 16,
     },
-    startFocusButton: {
+    activeBlockActions: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    actionButton: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
@@ -275,10 +376,29 @@ export default function FocusScreen() {
       borderRadius: 8,
       gap: 8,
     },
-    startFocusText: {
-      color: 'white',
+    primaryButton: {
+      backgroundColor: colors.primary,
+    },
+    secondaryButton: {
+      backgroundColor: colors.surface,
+      borderWidth: 2,
+      borderColor: colors.border,
+    },
+    resumeButton: {
+      backgroundColor: colors.secondary,
+    },
+    endButton: {
+      backgroundColor: colors.error,
+    },
+    actionButtonText: {
       fontSize: 16,
       fontWeight: '600',
+    },
+    primaryButtonText: {
+      color: 'white',
+    },
+    secondaryButtonText: {
+      color: colors.textSecondary,
     },
     noActiveContainer: {
       alignItems: 'center',
@@ -434,7 +554,8 @@ export default function FocusScreen() {
         <FocusTimer
           duration={getBlockDuration(activeBlock)}
           onComplete={handleFocusComplete}
-          onStop={handleEndFocus}
+          onStop={handleStopFocus}
+          onEnd={handleEndFocus}
           blockTitle={activeBlock.title}
           blockColor={activeBlock.color}
         />
@@ -480,6 +601,7 @@ export default function FocusScreen() {
             </View>
           </View>
 
+          {/* Active Block Section */}
           {activeBlock ? (
             <View style={styles.activeBlockContainer}>
               <Text style={styles.sectionTitle}>Current Active Block</Text>
@@ -493,13 +615,22 @@ export default function FocusScreen() {
                 </View>
                 <Text style={styles.activeBlockCategory}>{activeBlock.category}</Text>
                 
-                <TouchableOpacity 
-                  style={[styles.startFocusButton, { backgroundColor: activeBlock.color }]}
-                  onPress={() => handleStartFocus(activeBlock)}
-                >
-                  <Zap size={20} color="white" />
-                  <Text style={styles.startFocusText}>Enter Focus Mode</Text>
-                </TouchableOpacity>
+                <View style={styles.activeBlockActions}>
+                  <TouchableOpacity 
+                    style={[styles.actionButton, styles.resumeButton]}
+                    onPress={handleResumeFocus}
+                  >
+                    <Play size={16} color="white" />
+                    <Text style={[styles.actionButtonText, styles.primaryButtonText]}>Resume Focus</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity 
+                    style={[styles.actionButton, styles.endButton]}
+                    onPress={handleEndFocus}
+                  >
+                    <Text style={[styles.actionButtonText, styles.primaryButtonText]}>End Session</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
           ) : (
@@ -507,14 +638,14 @@ export default function FocusScreen() {
               <Coffee size={48} color={colors.textSecondary} />
               <Text style={styles.noActiveTitle}>No Active Block</Text>
               <Text style={styles.noActiveSubtitle}>
-                Select a time block from Today tab to start focusing
+                Select a time block below to start focusing
               </Text>
             </View>
           )}
 
-          {/* Upcoming Blocks - Show first, before completed */}
+          {/* Upcoming Blocks */}
           <View style={styles.upcomingContainer}>
-            <Text style={styles.sectionTitle}>Upcoming Blocks ({upcomingBlocks.length})</Text>
+            <Text style={styles.sectionTitle}>Available Blocks ({upcomingBlocks.length})</Text>
             {upcomingBlocks.length > 0 ? (
               upcomingBlocks.map((block) => (
                 <TouchableOpacity
@@ -531,6 +662,7 @@ export default function FocusScreen() {
                   </View>
                   <TouchableOpacity 
                     style={[styles.miniStartButton, { backgroundColor: block.color }]}
+                    onPress={() => handleStartFocus(block)}
                   >
                     <Zap size={14} color="white" />
                   </TouchableOpacity>
@@ -542,7 +674,7 @@ export default function FocusScreen() {
                   <Target size={32} color={colors.textSecondary} />
                 </View>
                 <Text style={styles.emptyText}>
-                  No upcoming blocks scheduled.{'\n'}Create your next focus session to get started!
+                  No blocks available for focus.{'\n'}Create your next focus session to get started!
                 </Text>
                 <TouchableOpacity 
                   style={styles.createBlockButton}
