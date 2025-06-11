@@ -65,14 +65,14 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
   );
 
   const onHandlerStateChange = (event: any) => {
-    if (event.nativeEvent.oldState === State.ACTIVE) {
-      const { translationX } = event.nativeEvent;
-      
-      if (translationX < -80) {
+    const { state, translationX } = event.nativeEvent;
+    
+    if (state === State.END) {
+      if (translationX < -60) {
         // Swipe left enough to reveal action buttons
         setIsSwipeActive(true);
         Animated.spring(translateX, {
-          toValue: -160, // Move block left to reveal buttons
+          toValue: -140, // Move block left to reveal buttons
           useNativeDriver: false,
           tension: 100,
           friction: 8,
@@ -98,10 +98,12 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
     // Reset edit form with current values
     setEditTitle(block.title);
     setEditTasks([...block.tasks]);
-    setIsEditModalVisible(true);
     
     // Reset swipe position immediately
     resetSwipe();
+    
+    // Open edit modal
+    setIsEditModalVisible(true);
   };
 
   const handleDelete = () => {
@@ -198,13 +200,39 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
   const styles = StyleSheet.create({
     container: {
       marginVertical: 6,
-      position: 'relative',
     },
     swipeContainer: {
       position: 'relative',
-      overflow: 'hidden',
       borderRadius: 12,
-      backgroundColor: colors.surface,
+      overflow: 'hidden',
+    },
+    // Action buttons positioned behind the block
+    actionsContainer: {
+      position: 'absolute',
+      right: 0,
+      top: 0,
+      bottom: 0,
+      width: 140,
+      flexDirection: 'row',
+      zIndex: 0,
+    },
+    actionButton: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: 120,
+    },
+    editButton: {
+      backgroundColor: '#007AFF',
+    },
+    deleteButton: {
+      backgroundColor: '#FF3B30',
+    },
+    actionButtonText: {
+      color: 'white',
+      fontSize: 12,
+      fontWeight: '600',
+      marginTop: 4,
     },
     blockContainer: {
       backgroundColor: colors.surface,
@@ -278,36 +306,6 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       height: '100%',
       borderRadius: 2,
       backgroundColor: block.color,
-    },
-    // Action buttons positioned behind the block
-    actionsContainer: {
-      position: 'absolute',
-      right: 0,
-      top: 0,
-      bottom: 0,
-      width: 160,
-      flexDirection: 'row',
-      zIndex: 0,
-    },
-    actionButton: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      minHeight: 120,
-    },
-    editButton: {
-      backgroundColor: '#007AFF',
-    },
-    deleteButton: {
-      backgroundColor: '#FF3B30',
-      borderTopRightRadius: 12,
-      borderBottomRightRadius: 12,
-    },
-    actionButtonText: {
-      color: 'white',
-      fontSize: 12,
-      fontWeight: '600',
-      marginTop: 4,
     },
     // Edit Modal Styles
     modalOverlay: {
@@ -444,35 +442,33 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
   return (
     <View style={styles.container}>
       <View style={styles.swipeContainer}>
-        {/* Action buttons positioned behind the block */}
-        {isSwipeActive && (
-          <View style={styles.actionsContainer}>
-            <TouchableOpacity 
-              style={[styles.actionButton, styles.editButton]}
-              onPress={handleEdit}
-              activeOpacity={0.8}
-            >
-              <Edit size={20} color="white" />
-              <Text style={styles.actionButtonText}>Edit</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.actionButton, styles.deleteButton]}
-              onPress={handleDelete}
-              activeOpacity={0.8}
-            >
-              <Trash2 size={20} color="white" />
-              <Text style={styles.actionButtonText}>Delete</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+        {/* Action buttons positioned behind the block - always rendered */}
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.editButton]}
+            onPress={handleEdit}
+            activeOpacity={0.8}
+          >
+            <Edit size={20} color="white" />
+            <Text style={styles.actionButtonText}>Edit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.deleteButton]}
+            onPress={handleDelete}
+            activeOpacity={0.8}
+          >
+            <Trash2 size={20} color="white" />
+            <Text style={styles.actionButtonText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
 
         {/* Main block content that slides over the action buttons */}
         <PanGestureHandler
           ref={gestureRef}
           onGestureEvent={onGestureEvent}
           onHandlerStateChange={onHandlerStateChange}
-          activeOffsetX={[-10, 10]}
-          failOffsetY={[-5, 5]}
+          activeOffsetX={[-15, 15]}
+          failOffsetY={[-10, 10]}
         >
           <Animated.View
             style={[
