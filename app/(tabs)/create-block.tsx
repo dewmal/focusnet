@@ -165,15 +165,19 @@ export default function CreateBlockScreen() {
       const updatedBlocks = [...existingBlocks, blockData];
       await saveTimeBlocks(updatedBlocks);
       
-      Alert.alert('Success', 'Time block created successfully!', [
-        { text: 'OK', onPress: () => router.back() }
-      ]);
+      // Immediately navigate back without showing alert
+      router.back();
+      
     } catch (error) {
       console.error('Error saving time block:', error);
       Alert.alert('Error', 'Failed to save time block. Please try again.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleCancel = () => {
+    router.back();
   };
 
   const formatDuration = (minutes: number) => {
@@ -637,7 +641,7 @@ export default function CreateBlockScreen() {
         title="Create Time Block"
         subtitle="Plan your focused work session"
         leftComponent={
-          <TouchableOpacity onPress={() => router.back()}>
+          <TouchableOpacity onPress={handleCancel}>
             <ArrowLeft size={24} color={colors.text} />
           </TouchableOpacity>
         }
@@ -899,7 +903,7 @@ export default function CreateBlockScreen() {
       <View style={styles.footer}>
         <TouchableOpacity
           style={[styles.footerButton, styles.cancelButton]}
-          onPress={() => router.back()}
+          onPress={handleCancel}
           activeOpacity={0.7}
         >
           <Text style={[styles.buttonText, styles.cancelButtonText]}>Cancel</Text>
