@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { ArrowLeft, Coffee, Zap, CircleCheck as CheckCircle, Clock, TrendingUp, Target } from 'lucide-react-native';
+import { ArrowLeft, Coffee, Zap, CircleCheck as CheckCircle, Clock, TrendingUp, Target, Plus } from 'lucide-react-native';
+import { router } from 'expo-router';
 import FocusTimer from '@/components/FocusTimer';
 import MobileHeader from '@/components/MobileHeader';
 import { loadTimeBlocks, saveTimeBlocks } from '@/utils/storage';
@@ -97,6 +98,10 @@ export default function FocusScreen() {
       averageRating,
       completionRate: totalBlocks > 0 ? Math.round((completedBlocks.length / totalBlocks) * 100) : 0
     };
+  };
+
+  const handleCreateNewBlock = () => {
+    router.push('/create-block');
   };
 
   const upcomingBlocks = blocks.filter(block => !block.isCompleted && !block.isActive);
@@ -314,16 +319,34 @@ export default function FocusScreen() {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    emptyCompletedContainer: {
+    emptyContainer: {
       alignItems: 'center',
       paddingVertical: 30,
       paddingHorizontal: 20,
     },
-    emptyCompletedText: {
+    emptyIcon: {
+      marginBottom: 12,
+    },
+    emptyText: {
       fontSize: 14,
       color: colors.textSecondary,
       textAlign: 'center',
-      marginTop: 8,
+      marginBottom: 16,
+      lineHeight: 20,
+    },
+    createBlockButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.primary,
+      paddingVertical: 12,
+      paddingHorizontal: 20,
+      borderRadius: 8,
+      gap: 8,
+    },
+    createBlockText: {
+      color: 'white',
+      fontSize: 14,
+      fontWeight: '600',
     },
     tipsContainer: {
       paddingVertical: 20,
@@ -429,6 +452,48 @@ export default function FocusScreen() {
             </View>
           )}
 
+          {/* Upcoming Blocks - Show first, before completed */}
+          <View style={styles.upcomingContainer}>
+            <Text style={styles.sectionTitle}>Upcoming Blocks ({upcomingBlocks.length})</Text>
+            {upcomingBlocks.length > 0 ? (
+              upcomingBlocks.slice(0, 5).map((block) => (
+                <TouchableOpacity
+                  key={block.id}
+                  style={[styles.upcomingBlock, { borderLeftColor: block.color }]}
+                  onPress={() => handleStartFocus(block)}
+                >
+                  <View style={styles.upcomingBlockContent}>
+                    <Text style={styles.upcomingBlockTitle}>{block.title}</Text>
+                    <Text style={styles.upcomingBlockTime}>
+                      {formatTime12Hour(block.startTime)} - {formatTime12Hour(block.endTime)}
+                    </Text>
+                  </View>
+                  <TouchableOpacity 
+                    style={[styles.miniStartButton, { backgroundColor: block.color }]}
+                  >
+                    <Zap size={14} color="white" />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <View style={styles.emptyContainer}>
+                <View style={styles.emptyIcon}>
+                  <Target size={32} color={colors.textSecondary} />
+                </View>
+                <Text style={styles.emptyText}>
+                  No upcoming blocks scheduled.{'\n'}Create your next focus session to get started!
+                </Text>
+                <TouchableOpacity 
+                  style={styles.createBlockButton}
+                  onPress={handleCreateNewBlock}
+                >
+                  <Plus size={16} color="white" />
+                  <Text style={styles.createBlockText}>Create New Block</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
           {/* Completed Focus Sessions */}
           <View style={styles.completedContainer}>
             <Text style={styles.sectionTitle}>Completed Today ({completedBlocks.length})</Text>
@@ -453,39 +518,16 @@ export default function FocusScreen() {
                 </View>
               ))
             ) : (
-              <View style={styles.emptyCompletedContainer}>
-                <Target size={32} color={colors.textSecondary} />
-                <Text style={styles.emptyCompletedText}>
+              <View style={styles.emptyContainer}>
+                <View style={styles.emptyIcon}>
+                  <CheckCircle size={32} color={colors.textSecondary} />
+                </View>
+                <Text style={styles.emptyText}>
                   No completed focus sessions yet today.{'\n'}Start your first session above!
                 </Text>
               </View>
             )}
           </View>
-
-          {upcomingBlocks.length > 0 && (
-            <View style={styles.upcomingContainer}>
-              <Text style={styles.sectionTitle}>Upcoming Blocks</Text>
-              {upcomingBlocks.slice(0, 3).map((block) => (
-                <TouchableOpacity
-                  key={block.id}
-                  style={[styles.upcomingBlock, { borderLeftColor: block.color }]}
-                  onPress={() => handleStartFocus(block)}
-                >
-                  <View style={styles.upcomingBlockContent}>
-                    <Text style={styles.upcomingBlockTitle}>{block.title}</Text>
-                    <Text style={styles.upcomingBlockTime}>
-                      {formatTime12Hour(block.startTime)} - {formatTime12Hour(block.endTime)}
-                    </Text>
-                  </View>
-                  <TouchableOpacity 
-                    style={[styles.miniStartButton, { backgroundColor: block.color }]}
-                  >
-                    <Zap size={14} color="white" />
-                  </TouchableOpacity>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
 
           <View style={styles.tipsContainer}>
             <Text style={styles.tipsTitle}>💡 Focus Tips</Text>

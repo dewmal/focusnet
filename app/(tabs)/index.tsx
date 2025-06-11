@@ -37,8 +37,38 @@ export default function TodayScreen() {
   };
 
   const handleBlockPress = (block: TimeBlockData) => {
-    // Navigate to edit screen (we can implement this later)
-    Alert.alert('Block Details', `"${block.title}" details functionality coming soon!`);
+    // Show block details in a nice alert format
+    const formatTime12Hour = (time24: string) => {
+      const [hour, minute] = time24.split(':').map(Number);
+      const period = hour >= 12 ? 'PM' : 'AM';
+      const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+      return `${displayHour}:${minute.toString().padStart(2, '0')} ${period}`;
+    };
+
+    const tasksList = block.tasks.length > 0 
+      ? '\n\nTasks:\n' + block.tasks.map(task => `• ${task}`).join('\n')
+      : '\n\nNo tasks added yet.';
+
+    const statusText = block.isCompleted 
+      ? '✅ Completed' 
+      : block.isActive 
+        ? '🔄 Active' 
+        : '⏳ Pending';
+
+    Alert.alert(
+      `📋 ${block.title}`,
+      `⏰ ${formatTime12Hour(block.startTime)} - ${formatTime12Hour(block.endTime)}\n` +
+      `🏷️ Category: ${block.category}\n` +
+      `📊 Status: ${statusText}${tasksList}`,
+      [
+        { text: 'Close', style: 'cancel' },
+        { 
+          text: 'Start Focus', 
+          onPress: () => handleStartFocus(block),
+          style: 'default'
+        }
+      ]
+    );
   };
 
   const handleStartFocus = (block: TimeBlockData) => {
