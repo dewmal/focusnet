@@ -31,6 +31,17 @@ export interface AppSettings {
   defaultDuration: number;
 }
 
+// Helper function to sort blocks by time
+const sortBlocksByTime = (blocks: TimeBlockData[]): TimeBlockData[] => {
+  return blocks.sort((a, b) => {
+    const timeA = a.startTime.split(':').map(Number);
+    const timeB = b.startTime.split(':').map(Number);
+    const minutesA = timeA[0] * 60 + timeA[1];
+    const minutesB = timeB[0] * 60 + timeB[1];
+    return minutesA - minutesB;
+  });
+};
+
 // Settings
 export const saveSettings = async (settings: AppSettings) => {
   try {
@@ -53,7 +64,9 @@ export const loadSettings = async (): Promise<AppSettings> => {
 // Time Blocks
 export const saveTimeBlocks = async (blocks: TimeBlockData[]) => {
   try {
-    await AsyncStorage.setItem(BLOCKS_KEY, JSON.stringify(blocks));
+    // Always sort blocks by time before saving
+    const sortedBlocks = sortBlocksByTime(blocks);
+    await AsyncStorage.setItem(BLOCKS_KEY, JSON.stringify(sortedBlocks));
   } catch (error) {
     console.error('Error saving time blocks:', error);
   }
@@ -62,10 +75,12 @@ export const saveTimeBlocks = async (blocks: TimeBlockData[]) => {
 export const loadTimeBlocks = async (): Promise<TimeBlockData[]> => {
   try {
     const blocks = await AsyncStorage.getItem(BLOCKS_KEY);
-    return blocks ? JSON.parse(blocks) : getDefaultBlocks();
+    const loadedBlocks = blocks ? JSON.parse(blocks) : getDefaultBlocks();
+    // Always return sorted blocks
+    return sortBlocksByTime(loadedBlocks);
   } catch (error) {
     console.error('Error loading time blocks:', error);
-    return getDefaultBlocks();
+    return sortBlocksByTime(getDefaultBlocks());
   }
 };
 
@@ -149,7 +164,7 @@ export const resetAllData = async (): Promise<boolean> => {
       }
     }
     
-    // Reset to default data
+    // Reset to default data (already sorted)
     await saveTimeBlocks(getDefaultBlocks());
     await saveCategories(getDefaultCategories());
     await saveSettings(getDefaultSettings());

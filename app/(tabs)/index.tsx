@@ -32,7 +32,15 @@ export default function TodayScreen() {
 
   const loadData = async () => {
     const savedBlocks = await loadTimeBlocks();
-    setBlocks(savedBlocks);
+    // Sort blocks by start time
+    const sortedBlocks = savedBlocks.sort((a, b) => {
+      const timeA = a.startTime.split(':').map(Number);
+      const timeB = b.startTime.split(':').map(Number);
+      const minutesA = timeA[0] * 60 + timeA[1];
+      const minutesB = timeB[0] * 60 + timeB[1];
+      return minutesA - minutesB;
+    });
+    setBlocks(sortedBlocks);
   };
 
   const handleBlockPress = (block: TimeBlockData) => {
@@ -86,8 +94,17 @@ export default function TodayScreen() {
       };
 
       const updatedBlocks = [...blocks, newBlock];
-      setBlocks(updatedBlocks);
-      await saveTimeBlocks(updatedBlocks);
+      // Sort the updated blocks by time before saving
+      const sortedBlocks = updatedBlocks.sort((a, b) => {
+        const timeA = a.startTime.split(':').map(Number);
+        const timeB = b.startTime.split(':').map(Number);
+        const minutesA = timeA[0] * 60 + timeA[1];
+        const minutesB = timeB[0] * 60 + timeB[1];
+        return minutesA - minutesB;
+      });
+      
+      setBlocks(sortedBlocks);
+      await saveTimeBlocks(sortedBlocks);
       
       Alert.alert('Success', `Quick ${duration}-minute block has been added!`);
     } catch (error) {
@@ -119,8 +136,17 @@ export default function TodayScreen() {
       }));
 
       const updatedBlocks = [...blocks, ...copiedBlocks];
-      setBlocks(updatedBlocks);
-      await saveTimeBlocks(updatedBlocks);
+      // Sort the updated blocks by time before saving
+      const sortedBlocks = updatedBlocks.sort((a, b) => {
+        const timeA = a.startTime.split(':').map(Number);
+        const timeB = b.startTime.split(':').map(Number);
+        const minutesA = timeA[0] * 60 + timeA[1];
+        const minutesB = timeB[0] * 60 + timeB[1];
+        return minutesA - minutesB;
+      });
+      
+      setBlocks(sortedBlocks);
+      await saveTimeBlocks(sortedBlocks);
       
       Alert.alert('Success', `${copiedBlocks.length} blocks have been copied from yesterday!`);
     } catch (error) {
