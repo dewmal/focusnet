@@ -67,37 +67,35 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
     if (event.nativeEvent.oldState === State.ACTIVE) {
       const { translationX } = event.nativeEvent;
       
-      if (translationX < -60) {
+      if (translationX < -80) {
         // Swipe left enough to reveal action buttons
         setIsSwipeActive(true);
         Animated.spring(translateX, {
-          toValue: -160, // Wider to accommodate both buttons
+          toValue: -160, // Move block left to reveal buttons
           useNativeDriver: false,
-          tension: 150,
+          tension: 100,
           friction: 8,
         }).start();
       } else {
         // Reset position for any other gesture
-        setIsSwipeActive(false);
-        Animated.spring(translateX, {
-          toValue: 0,
-          useNativeDriver: false,
-          tension: 150,
-          friction: 8,
-        }).start();
+        resetSwipe();
       }
     }
   };
 
-  const handleEdit = () => {
-    // Reset swipe position and open edit modal
+  const resetSwipe = () => {
     setIsSwipeActive(false);
     Animated.spring(translateX, {
       toValue: 0,
       useNativeDriver: false,
-      tension: 150,
+      tension: 100,
       friction: 8,
     }).start();
+  };
+
+  const handleEdit = () => {
+    // Reset swipe position and open edit modal
+    resetSwipe();
     
     // Reset edit form with current values
     setEditTitle(block.title);
@@ -118,31 +116,14 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
         { 
           text: 'Cancel', 
           style: 'cancel',
-          onPress: () => {
-            // Reset swipe position when cancelled
-            setIsSwipeActive(false);
-            Animated.spring(translateX, {
-              toValue: 0,
-              useNativeDriver: false,
-              tension: 150,
-              friction: 8,
-            }).start();
-          }
+          onPress: resetSwipe
         },
         {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            // Reset position first, then delete
-            setIsSwipeActive(false);
-            Animated.spring(translateX, {
-              toValue: 0,
-              useNativeDriver: false,
-              tension: 150,
-              friction: 8,
-            }).start(() => {
-              onDelete(block.id);
-            });
+            resetSwipe();
+            onDelete(block.id);
           }
         }
       ]
@@ -151,14 +132,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
 
   const handleBlockPress = () => {
     if (isSwipeActive) {
-      // If swipe is active, tapping should close the swipe
-      setIsSwipeActive(false);
-      Animated.spring(translateX, {
-        toValue: 0,
-        useNativeDriver: false,
-        tension: 150,
-        friction: 8,
-      }).start();
+      resetSwipe();
     } else {
       onPress();
     }
@@ -221,11 +195,11 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
     container: {
       marginVertical: 6,
       position: 'relative',
-      overflow: 'hidden',
     },
     swipeContainer: {
-      flexDirection: 'row',
-      alignItems: 'stretch',
+      position: 'relative',
+      overflow: 'hidden',
+      borderRadius: 12,
     },
     blockContainer: {
       backgroundColor: colors.surface,
@@ -238,8 +212,8 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       shadowOpacity: 0.1,
       shadowRadius: 4,
       elevation: 3,
-      width: '100%',
       minHeight: 120,
+      zIndex: 1,
     },
     header: {
       flexDirection: 'row',
@@ -300,18 +274,24 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       borderRadius: 2,
       backgroundColor: block.color,
     },
+    // Action buttons positioned behind the block
     actionsContainer: {
+      position: 'absolute',
+      right: 0,
+      top: 0,
+      bottom: 0,
+      width: 160,
       flexDirection: 'row',
+      zIndex: 0,
     },
     actionButton: {
-      width: 80,
+      flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
+      minHeight: 120,
     },
     editButton: {
       backgroundColor: '#007AFF',
-      borderTopRightRadius: 0,
-      borderBottomRightRadius: 0,
     },
     deleteButton: {
       backgroundColor: '#FF3B30',
@@ -459,6 +439,27 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
   return (
     <View style={styles.container}>
       <View style={styles.swipeContainer}>
+        {/* Action buttons positioned behind the block */}
+        <View style={styles.actionsContainer}>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.editButton]}
+            onPress={handleEdit}
+            activeOpacity={0.8}
+          >
+            <Edit size={20} color="white" />
+            <Text style={styles.actionButtonText}>Edit</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.actionButton, styles.deleteButton]}
+            onPress={handleDelete}
+            activeOpacity={0.8}
+          >
+            <Trash2 size={20} color="white" />
+            <Text style={styles.actionButtonText}>Delete</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Main block content that slides over the action buttons */}
         <PanGestureHandler
           onGestureEvent={onGestureEvent}
           onHandlerStateChange={onHandlerStateChange}
@@ -511,27 +512,6 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
             </Pressable>
           </Animated.View>
         </PanGestureHandler>
-
-        {isSwipeActive && (
-          <View style={styles.actionsContainer}>
-            <TouchableOpacity 
-              style={[styles.actionButton, styles.editButton]}
-              onPress={handleEdit}
-              activeOpacity={0.8}
-            >
-              <Edit size={20} color="white" />
-              <Text style={styles.actionButtonText}>Edit</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.actionButton, styles.deleteButton]}
-              onPress={handleDelete}
-              activeOpacity={0.8}
-            >
-              <Trash2 size={20} color="white" />
-              <Text style={styles.actionButtonText}>Delete</Text>
-            </TouchableOpacity>
-          </View>
-        )}
       </View>
 
       {/* Edit Modal */}
