@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Pressable, Alert, Animated, TextInput, ScrollView, Modal } from 'react-native';
-import { Clock, Play, CircleCheck as CheckCircle, Trash2, Edit, Save, X, Plus } from 'lucide-react-native';
+import { Clock, Play, CircleCheck as CheckCircle, Trash2, CreditCard as Edit, Save, X, Plus } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
 
