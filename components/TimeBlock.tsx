@@ -61,31 +61,22 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
     if (event.nativeEvent.oldState === State.ACTIVE) {
       const { translationX } = event.nativeEvent;
       
-      if (translationX < -80) {
+      if (translationX < -60) {
         // Swipe left enough to reveal delete button
         setIsSwipeActive(true);
         Animated.spring(translateX, {
           toValue: -80,
           useNativeDriver: false,
-          tension: 100,
-          friction: 8,
-        }).start();
-      } else if (translationX > 20) {
-        // Swipe right or small left swipe - hide delete button
-        setIsSwipeActive(false);
-        Animated.spring(translateX, {
-          toValue: 0,
-          useNativeDriver: false,
-          tension: 100,
+          tension: 150,
           friction: 8,
         }).start();
       } else {
-        // Small movement - return to original position
+        // Reset position for any other gesture
         setIsSwipeActive(false);
         Animated.spring(translateX, {
           toValue: 0,
           useNativeDriver: false,
-          tension: 100,
+          tension: 150,
           friction: 8,
         }).start();
       }
@@ -111,7 +102,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
             Animated.spring(translateX, {
               toValue: 0,
               useNativeDriver: false,
-              tension: 100,
+              tension: 150,
               friction: 8,
             }).start();
           }
@@ -120,7 +111,16 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            onDelete(block.id);
+            // Reset position first, then delete
+            setIsSwipeActive(false);
+            Animated.spring(translateX, {
+              toValue: 0,
+              useNativeDriver: false,
+              tension: 150,
+              friction: 8,
+            }).start(() => {
+              onDelete(block.id);
+            });
           }
         }
       ]
@@ -134,7 +134,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
       Animated.spring(translateX, {
         toValue: 0,
         useNativeDriver: false,
-        tension: 100,
+        tension: 150,
         friction: 8,
       }).start();
     } else {
@@ -152,6 +152,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
     container: {
       marginVertical: 6,
       position: 'relative',
+      overflow: 'hidden',
     },
     swipeContainer: {
       flexDirection: 'row',
@@ -237,7 +238,6 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
       alignItems: 'center',
       borderTopRightRadius: 12,
       borderBottomRightRadius: 12,
-      marginLeft: -12,
     },
     deleteButtonText: {
       color: 'white',
@@ -254,6 +254,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
           onGestureEvent={onGestureEvent}
           onHandlerStateChange={onHandlerStateChange}
           activeOffsetX={[-10, 10]}
+          failOffsetY={[-5, 5]}
         >
           <Animated.View
             style={[
