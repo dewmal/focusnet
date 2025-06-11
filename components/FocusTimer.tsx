@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated, Alert, StatusBar, Dimensions } from 'react-native';
-import { X, Pause, Play, RotateCcw, ArrowLeft } from 'lucide-react-native';
+import { X, Pause, Play, RotateCcw, LogOut } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 
 interface FocusTimerProps {
@@ -209,50 +209,12 @@ export default function FocusTimer({
       flex: 1,
       backgroundColor: '#000000',
     },
-    header: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingTop: 60,
-      paddingHorizontal: 24,
-      paddingBottom: 20,
-      zIndex: 1000,
-      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-    },
-    exitButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: 'rgba(255, 255, 255, 0.15)',
-      paddingHorizontal: 16,
-      paddingVertical: 10,
-      borderRadius: 25,
-      borderWidth: 1,
-      borderColor: 'rgba(255, 255, 255, 0.2)',
-      gap: 8,
-    },
-    exitButtonText: {
-      color: 'rgba(255, 255, 255, 0.9)',
-      fontSize: 14,
-      fontWeight: '600',
-    },
-    timerInfo: {
-      alignItems: 'center',
-    },
-    timerInfoText: {
-      color: 'rgba(255, 255, 255, 0.7)',
-      fontSize: 12,
-      fontWeight: '500',
-    },
     content: {
       flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
       paddingHorizontal: 24,
-      paddingTop: 120,
+      paddingTop: 80,
       paddingBottom: 180, // Make room for bottom panel
     },
     titleContainer: {
@@ -367,7 +329,7 @@ export default function FocusTimer({
       position: 'absolute',
       right: 20,
       top: '50%',
-      transform: [{ translateY: -60 }],
+      transform: [{ translateY: -80 }],
       flexDirection: 'column',
       alignItems: 'center',
       gap: 16,
@@ -408,6 +370,11 @@ export default function FocusTimer({
       backgroundColor: 'rgba(255, 184, 0, 0.2)',
       borderWidth: 1,
       borderColor: 'rgba(255, 184, 0, 0.4)',
+    },
+    exitButton: {
+      backgroundColor: 'rgba(255, 68, 68, 0.2)',
+      borderWidth: 1,
+      borderColor: 'rgba(255, 68, 68, 0.4)',
     },
     closeControlsButton: {
       backgroundColor: 'rgba(255, 255, 255, 0.1)',
@@ -458,24 +425,6 @@ export default function FocusTimer({
     <View style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="#000000" />
 
-      {/* Enhanced Header with Exit Button */}
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.exitButton}
-          onPress={handleExit}
-          activeOpacity={0.7}
-        >
-          <ArrowLeft size={18} color="rgba(255, 255, 255, 0.9)" />
-          <Text style={styles.exitButtonText}>Exit</Text>
-        </TouchableOpacity>
-
-        <View style={styles.timerInfo}>
-          <Text style={styles.timerInfoText}>
-            {Math.floor(duration)} min session
-          </Text>
-        </View>
-      </View>
-
       <View style={styles.content}>
         <View style={styles.titleContainer}>
           <Text style={styles.blockTitle}>{blockTitle}</Text>
@@ -519,13 +468,13 @@ export default function FocusTimer({
       {timeLeft <= 0 && (
         <View style={styles.completedContainer}>
           <Text style={styles.completedText}>
-            🎉 Session Complete! Tap Exit to continue.
+            🎉 Session Complete! Use controls to exit.
           </Text>
         </View>
       )}
 
       {/* RIGHT SIDE CONTROLS TOGGLE */}
-      {!showControls && timeLeft > 0 && (
+      {!showControls && (
         <TouchableOpacity
           style={styles.controlsToggle}
           onPress={() => setShowControls(true)}
@@ -536,28 +485,44 @@ export default function FocusTimer({
       )}
 
       {/* RIGHT SIDE FLOATING CONTROLS */}
-      {showControls && timeLeft > 0 && (
+      {showControls && (
         <View style={styles.controls}>
+          {/* Play/Pause Button */}
+          {timeLeft > 0 && (
+            <TouchableOpacity
+              style={[styles.controlButton, styles.primaryButton]}
+              onPress={toggleTimer}
+              activeOpacity={0.7}
+            >
+              {isPaused ? (
+                <Play size={20} color="white" />
+              ) : (
+                <Pause size={20} color="white" />
+              )}
+            </TouchableOpacity>
+          )}
+
+          {/* Reset Button */}
+          {timeLeft > 0 && (
+            <TouchableOpacity
+              style={[styles.controlButton, styles.resetButton]}
+              onPress={resetTimer}
+              activeOpacity={0.7}
+            >
+              <RotateCcw size={16} color="#FFB800" />
+            </TouchableOpacity>
+          )}
+
+          {/* Exit Button */}
           <TouchableOpacity
-            style={[styles.controlButton, styles.primaryButton]}
-            onPress={toggleTimer}
+            style={[styles.controlButton, styles.exitButton]}
+            onPress={handleExit}
             activeOpacity={0.7}
           >
-            {isPaused ? (
-              <Play size={20} color="white" />
-            ) : (
-              <Pause size={20} color="white" />
-            )}
+            <LogOut size={18} color="#FF4444" />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.controlButton, styles.resetButton]}
-            onPress={resetTimer}
-            activeOpacity={0.7}
-          >
-            <RotateCcw size={16} color="#FFB800" />
-          </TouchableOpacity>
-
+          {/* Close Controls Button */}
           <TouchableOpacity
             style={[styles.controlButton, styles.closeControlsButton]}
             onPress={() => setShowControls(false)}
