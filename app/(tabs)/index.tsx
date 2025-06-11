@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Alert, Dimensions, Platform } from 'react-native';
 import { Plus, Calendar, TrendingUp } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -13,6 +13,8 @@ export default function TodayScreen() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const { colors } = useTheme();
+  const screenWidth = Dimensions.get('window').width;
+  const isWeb = Platform.OS === 'web';
 
   useEffect(() => {
     loadData();
@@ -105,6 +107,9 @@ export default function TodayScreen() {
       setBlocks(updatedBlocks);
       await saveTimeBlocks(updatedBlocks);
       Alert.alert('Success', 'Time block has been updated!');
+      
+      // Reload to get properly sorted blocks
+      await loadData();
     } catch (error) {
       console.error('Error updating block:', error);
       Alert.alert('Error', 'Failed to update time block. Please try again.');
@@ -250,8 +255,9 @@ export default function TodayScreen() {
       flex: 1,
     },
     content: {
-      paddingHorizontal: 20,
+      paddingHorizontal: Math.max(20, screenWidth * 0.05),
       paddingTop: 16,
+      paddingBottom: 32,
     },
     addButton: {
       backgroundColor: colors.primary,
@@ -272,7 +278,7 @@ export default function TodayScreen() {
       marginBottom: 8,
     },
     currentTime: {
-      fontSize: 24,
+      fontSize: Math.min(24, screenWidth * 0.06),
       fontWeight: '600',
       color: colors.primary,
       backgroundColor: colors.surface,
@@ -283,7 +289,7 @@ export default function TodayScreen() {
       borderColor: colors.border,
     },
     statsContainer: {
-      flexDirection: 'row',
+      flexDirection: screenWidth < 400 ? 'column' : 'row',
       gap: 12,
       marginBottom: 24,
     },
@@ -295,9 +301,10 @@ export default function TodayScreen() {
       alignItems: 'center',
       borderWidth: 1,
       borderColor: colors.border,
+      minHeight: 80,
     },
     statNumber: {
-      fontSize: 20,
+      fontSize: Math.min(20, screenWidth * 0.05),
       fontWeight: '700',
       color: colors.text,
       marginTop: 8,
@@ -307,12 +314,13 @@ export default function TodayScreen() {
       fontSize: 12,
       color: colors.textSecondary,
       fontWeight: '500',
+      textAlign: 'center',
     },
     blocksContainer: {
       marginBottom: 24,
     },
     sectionTitle: {
-      fontSize: 18,
+      fontSize: Math.min(18, screenWidth * 0.045),
       fontWeight: '700',
       color: colors.text,
       marginBottom: 16,
@@ -320,17 +328,20 @@ export default function TodayScreen() {
     emptyState: {
       alignItems: 'center',
       paddingVertical: 40,
+      paddingHorizontal: 20,
     },
     emptyText: {
       fontSize: 16,
       color: colors.textSecondary,
       fontWeight: '600',
       marginBottom: 4,
+      textAlign: 'center',
     },
     emptySubtext: {
       fontSize: 14,
       color: colors.textSecondary,
       textAlign: 'center',
+      lineHeight: 20,
     },
     quickActions: {
       paddingBottom: 32,
@@ -346,6 +357,7 @@ export default function TodayScreen() {
       shadowOpacity: 0.2,
       shadowRadius: 4,
       elevation: 3,
+      minHeight: 48,
     },
     quickActionText: {
       color: 'white',
@@ -374,6 +386,7 @@ export default function TodayScreen() {
       shadowOpacity: 0.2,
       shadowRadius: 4,
       elevation: 3,
+      minHeight: 48,
     },
     createBlockText: {
       color: 'white',
@@ -393,6 +406,7 @@ export default function TodayScreen() {
       color: colors.textSecondary,
       textAlign: 'center',
       fontStyle: 'italic',
+      lineHeight: 16,
     },
   });
 
@@ -445,7 +459,10 @@ export default function TodayScreen() {
             {blocks.length > 0 && (
               <View style={styles.swipeHint}>
                 <Text style={styles.swipeHintText}>
-                  💡 Swipe left on any block to edit or delete it
+                  {isWeb 
+                    ? '💡 Long press on any block to edit or delete it'
+                    : '💡 Swipe left on any block to edit or delete it'
+                  }
                 </Text>
               </View>
             )}

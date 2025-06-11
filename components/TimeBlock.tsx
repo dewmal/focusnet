@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Pressable, Alert, Animated, TextInput, ScrollView, Modal } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Pressable, Alert, Animated, TextInput, ScrollView, Modal, Platform, Dimensions } from 'react-native';
 import { Clock, Play, CircleCheck as CheckCircle, Trash2, CreditCard as Edit, Save, X, Plus, ChevronDown, Palette } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
@@ -32,6 +32,8 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
   const [isSwipeActive, setIsSwipeActive] = useState(false);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
   const gestureRef = useRef(null);
+  const screenWidth = Dimensions.get('window').width;
+  const isWeb = Platform.OS === 'web';
   
   // Edit form state
   const [editTitle, setEditTitle] = useState(block.title);
@@ -129,19 +131,20 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
     return '0%';
   };
 
-  const onGestureEvent = Animated.event(
+  // Web-compatible gesture handling
+  const onGestureEvent = isWeb ? undefined : Animated.event(
     [{ nativeEvent: { translationX: translateX } }],
     { useNativeDriver: false }
   );
 
-  const onHandlerStateChange = (event: any) => {
+  const onHandlerStateChange = isWeb ? undefined : (event: any) => {
     const { state, translationX } = event.nativeEvent;
     
     if (state === State.END) {
-      if (translationX < -60) {
+      if (translationX < -80) {
         setIsSwipeActive(true);
         Animated.spring(translateX, {
-          toValue: -140,
+          toValue: -120,
           useNativeDriver: false,
           tension: 100,
           friction: 8,
@@ -160,6 +163,21 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       tension: 100,
       friction: 8,
     }).start();
+  };
+
+  // Web fallback: Long press to show actions
+  const handleLongPress = () => {
+    if (isWeb) {
+      Alert.alert(
+        'Block Actions',
+        `What would you like to do with "${block.title}"?`,
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Edit', onPress: handleEdit },
+          { text: 'Delete', onPress: handleDelete, style: 'destructive' },
+        ]
+      );
+    }
   };
 
   const handleEdit = () => {
@@ -293,7 +311,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
           activeOpacity={1}
           onPress={() => setActiveDropdown(null)}
         >
-          <View style={styles.dropdownModal}>
+          <View style={[styles.dropdownModal, { maxWidth: screenWidth * 0.9 }]}>
             <View style={styles.dropdownHeader}>
               <Text style={styles.dropdownTitle}>Select {type}</Text>
               <TouchableOpacity onPress={() => setActiveDropdown(null)}>
@@ -340,18 +358,20 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
   const styles = StyleSheet.create({
     container: {
       marginVertical: 6,
+      width: '100%',
     },
     swipeContainer: {
       position: 'relative',
       borderRadius: 12,
       overflow: 'hidden',
+      width: '100%',
     },
     actionsContainer: {
       position: 'absolute',
       right: 0,
       top: 0,
       bottom: 0,
-      width: 140,
+      width: 120,
       flexDirection: 'row',
       zIndex: 0,
     },
@@ -386,22 +406,27 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       elevation: 3,
       minHeight: 120,
       zIndex: 1,
+      width: '100%',
     },
     header: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
       marginBottom: 8,
+      flexWrap: 'wrap',
     },
     timeInfo: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
+      flex: 1,
+      minWidth: 0,
     },
     timeText: {
-      fontSize: 12,
+      fontSize: screenWidth < 400 ? 11 : 12,
       color: colors.textSecondary,
       fontWeight: '600',
+      flexShrink: 1,
     },
     playButton: {
       padding: 8,
@@ -409,12 +434,14 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       alignItems: 'center',
       justifyContent: 'center',
       backgroundColor: block.color,
+      marginLeft: 8,
     },
     title: {
-      fontSize: 16,
+      fontSize: screenWidth < 400 ? 15 : 16,
       fontWeight: '700',
       color: colors.text,
       marginBottom: 4,
+      lineHeight: 20,
     },
     category: {
       fontSize: 12,
@@ -429,6 +456,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       fontSize: 12,
       color: colors.textSecondary,
       marginBottom: 2,
+      lineHeight: 16,
     },
     moreTasks: {
       fontSize: 11,
@@ -452,12 +480,14 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       backgroundColor: 'rgba(0, 0, 0, 0.5)',
       justifyContent: 'center',
       alignItems: 'center',
+      padding: 20,
     },
     modalContent: {
       backgroundColor: colors.surface,
       borderRadius: 20,
       padding: 24,
-      width: '95%',
+      width: '100%',
+      maxWidth: 500,
       maxHeight: '90%',
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 10 },
@@ -475,9 +505,11 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       fontSize: 20,
       fontWeight: '700',
       color: colors.text,
+      flex: 1,
     },
     closeButton: {
       padding: 8,
+      marginLeft: 16,
     },
     formSection: {
       marginBottom: 20,
@@ -496,6 +528,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       padding: 12,
       fontSize: 16,
       color: colors.text,
+      minHeight: 44,
     },
     timeSection: {
       marginBottom: 20,
@@ -507,6 +540,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
     },
     timeDropdown: {
       flex: 1,
+      minWidth: 0,
     },
     timeDropdownButton: {
       backgroundColor: colors.background,
@@ -517,11 +551,13 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+      minHeight: 44,
     },
     timeDropdownText: {
       fontSize: 14,
       color: colors.text,
       fontWeight: '500',
+      flex: 1,
     },
     timeLabel: {
       fontSize: 12,
@@ -541,11 +577,13 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+      minHeight: 44,
     },
     categoryDropdownContent: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
+      flex: 1,
     },
     categoryDot: {
       width: 12,
@@ -559,6 +597,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: 12,
+      justifyContent: 'flex-start',
     },
     colorOption: {
       width: 40,
@@ -568,6 +607,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       borderColor: 'transparent',
       alignItems: 'center',
       justifyContent: 'center',
+      margin: 2,
     },
     colorOptionSelected: {
       borderColor: colors.text,
@@ -596,6 +636,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       padding: 12,
       fontSize: 14,
       color: colors.text,
+      minHeight: 44,
     },
     taskButton: {
       width: 36,
@@ -620,6 +661,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       borderRadius: 8,
       gap: 8,
       backgroundColor: colors.background,
+      minHeight: 44,
     },
     addTaskText: {
       fontSize: 14,
@@ -629,6 +671,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
     modalActions: {
       flexDirection: 'row',
       gap: 12,
+      marginTop: 20,
     },
     modalButton: {
       flex: 1,
@@ -638,6 +681,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       flexDirection: 'row',
       justifyContent: 'center',
       gap: 8,
+      minHeight: 48,
     },
     cancelButton: {
       backgroundColor: colors.background,
@@ -663,11 +707,13 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       backgroundColor: 'rgba(0, 0, 0, 0.5)',
       justifyContent: 'center',
       alignItems: 'center',
+      padding: 20,
     },
     dropdownModal: {
       backgroundColor: colors.surface,
       borderRadius: 16,
-      width: '80%',
+      width: '100%',
+      maxWidth: 400,
       maxHeight: '60%',
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 10 },
@@ -687,6 +733,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       fontSize: 16,
       fontWeight: '600',
       color: colors.text,
+      flex: 1,
     },
     dropdownList: {
       maxHeight: 250,
@@ -699,6 +746,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       borderBottomWidth: 1,
       borderBottomColor: colors.border + '30',
       gap: 8,
+      minHeight: 44,
     },
     dropdownOptionSelected: {
       backgroundColor: colors.primary + '20',
@@ -707,6 +755,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       fontSize: 14,
       color: colors.text,
       fontWeight: '500',
+      flex: 1,
     },
     dropdownOptionTextSelected: {
       color: colors.primary,
@@ -714,81 +763,100 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
     },
   });
 
+  // Render different components based on platform
+  const BlockContent = (
+    <Pressable 
+      onPress={handleBlockPress}
+      onLongPress={handleLongPress}
+      delayLongPress={500}
+    >
+      <View style={styles.header}>
+        <View style={styles.timeInfo}>
+          <Text style={styles.timeText}>
+            {formatTime12Hour(block.startTime)} - {formatTime12Hour(block.endTime)}
+          </Text>
+          {getStatusIcon()}
+        </View>
+        <TouchableOpacity 
+          style={styles.playButton}
+          onPress={handleStartFocus}
+        >
+          <Play size={14} color="white" />
+        </TouchableOpacity>
+      </View>
+      
+      <Text style={styles.title}>{block.title}</Text>
+      <Text style={styles.category}>{block.category}</Text>
+      
+      {block.tasks.length > 0 && (
+        <View style={styles.tasksContainer}>
+          {block.tasks.slice(0, 2).map((task, index) => (
+            <Text key={index} style={styles.task}>• {task}</Text>
+          ))}
+          {block.tasks.length > 2 && (
+            <Text style={styles.moreTasks}>+{block.tasks.length - 2} more</Text>
+          )}
+        </View>
+      )}
+      
+      <View style={styles.progressBar}>
+        <View 
+          style={[styles.progressFill, { 
+            width: getProgressWidth(),
+          }]} 
+        />
+      </View>
+    </Pressable>
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.swipeContainer}>
-        <View style={styles.actionsContainer}>
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.editButton]}
-            onPress={handleEdit}
-            activeOpacity={0.8}
-          >
-            <Edit size={20} color="white" />
-            <Text style={styles.actionButtonText}>Edit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.actionButton, styles.deleteButton]}
-            onPress={handleDelete}
-            activeOpacity={0.8}
-          >
-            <Trash2 size={20} color="white" />
-            <Text style={styles.actionButtonText}>Delete</Text>
-          </TouchableOpacity>
-        </View>
+        {!isWeb && (
+          <View style={styles.actionsContainer}>
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.editButton]}
+              onPress={handleEdit}
+              activeOpacity={0.8}
+            >
+              <Edit size={20} color="white" />
+              <Text style={styles.actionButtonText}>Edit</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={[styles.actionButton, styles.deleteButton]}
+              onPress={handleDelete}
+              activeOpacity={0.8}
+            >
+              <Trash2 size={20} color="white" />
+              <Text style={styles.actionButtonText}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        )}
 
-        <PanGestureHandler
-          ref={gestureRef}
-          onGestureEvent={onGestureEvent}
-          onHandlerStateChange={onHandlerStateChange}
-          activeOffsetX={[-15, 15]}
-          failOffsetY={[-10, 10]}
-        >
-          <Animated.View
-            style={[
-              styles.blockContainer,
-              { transform: [{ translateX }] }
-            ]}
+        {isWeb ? (
+          // Web version without gesture handler
+          <View style={styles.blockContainer}>
+            {BlockContent}
+          </View>
+        ) : (
+          // Mobile version with gesture handler
+          <PanGestureHandler
+            ref={gestureRef}
+            onGestureEvent={onGestureEvent}
+            onHandlerStateChange={onHandlerStateChange}
+            activeOffsetX={[-15, 15]}
+            failOffsetY={[-10, 10]}
           >
-            <Pressable onPress={handleBlockPress}>
-              <View style={styles.header}>
-                <View style={styles.timeInfo}>
-                  <Text style={styles.timeText}>
-                    {formatTime12Hour(block.startTime)} - {formatTime12Hour(block.endTime)}
-                  </Text>
-                  {getStatusIcon()}
-                </View>
-                <TouchableOpacity 
-                  style={styles.playButton}
-                  onPress={handleStartFocus}
-                >
-                  <Play size={14} color="white" />
-                </TouchableOpacity>
-              </View>
-              
-              <Text style={styles.title}>{block.title}</Text>
-              <Text style={styles.category}>{block.category}</Text>
-              
-              {block.tasks.length > 0 && (
-                <View style={styles.tasksContainer}>
-                  {block.tasks.slice(0, 2).map((task, index) => (
-                    <Text key={index} style={styles.task}>• {task}</Text>
-                  ))}
-                  {block.tasks.length > 2 && (
-                    <Text style={styles.moreTasks}>+{block.tasks.length - 2} more</Text>
-                  )}
-                </View>
-              )}
-              
-              <View style={styles.progressBar}>
-                <View 
-                  style={[styles.progressFill, { 
-                    width: getProgressWidth(),
-                  }]} 
-                />
-              </View>
-            </Pressable>
-          </Animated.View>
-        </PanGestureHandler>
+            <Animated.View
+              style={[
+                styles.blockContainer,
+                { transform: [{ translateX }] }
+              ]}
+            >
+              {BlockContent}
+            </Animated.View>
+          </PanGestureHandler>
+        )}
       </View>
 
       {/* Enhanced Edit Modal */}

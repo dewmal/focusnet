@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Dimensions } from 'react-native';
 import { Bell, Settings, User, Menu } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -37,13 +37,15 @@ export default function MobileHeader({
   minimal = false,
 }: MobileHeaderProps) {
   const { colors } = useTheme();
+  const screenWidth = Dimensions.get('window').width;
+  const isSmallScreen = screenWidth < 400;
 
   const styles = StyleSheet.create({
     container: {
       backgroundColor: backgroundColor || colors.background,
-      paddingTop: Platform.OS === 'ios' ? 50 : 20,
+      paddingTop: Platform.OS === 'ios' ? 50 : Platform.OS === 'web' ? 20 : 20,
       paddingBottom: minimal ? 8 : 16,
-      paddingHorizontal: 20,
+      paddingHorizontal: Math.max(20, screenWidth * 0.05),
       borderBottomWidth: minimal ? 0 : 1,
       borderBottomColor: colors.border,
       shadowColor: minimal ? 'transparent' : '#000',
@@ -62,26 +64,33 @@ export default function MobileHeader({
       flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
+      minWidth: 0,
     },
     titleContainer: {
       flex: 1,
       marginLeft: leftComponent ? 12 : 0,
+      minWidth: 0,
     },
     title: {
-      fontSize: 20,
+      fontSize: isSmallScreen ? 18 : 20,
       fontWeight: '700',
       color: colors.text,
       marginBottom: subtitle ? 2 : 0,
+      numberOfLines: 1,
+      ellipsizeMode: 'tail',
     },
     subtitle: {
-      fontSize: 13,
+      fontSize: isSmallScreen ? 12 : 13,
       color: colors.textSecondary,
       fontWeight: '500',
+      numberOfLines: 1,
+      ellipsizeMode: 'tail',
     },
     rightSection: {
       flexDirection: 'row',
       alignItems: 'center',
       gap: 8,
+      flexShrink: 0,
     },
     actionButton: {
       width: 40,
@@ -129,8 +138,8 @@ export default function MobileHeader({
           
           {(title || subtitle) && (
             <View style={styles.titleContainer}>
-              {title && <Text style={styles.title}>{title}</Text>}
-              {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+              {title && <Text style={styles.title} numberOfLines={1}>{title}</Text>}
+              {subtitle && <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>}
             </View>
           )}
         </View>
