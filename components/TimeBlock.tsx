@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Pressable, Alert, Animated, PanGestureHandler, State } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Pressable, Alert, Animated } from 'react-native';
 import { Clock, Play, CircleCheck as CheckCircle, Trash2 } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
+import { PanGestureHandler, State } from 'react-native-gesture-handler';
 
 export interface TimeBlockData {
   id: string;
@@ -46,9 +47,9 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete }: Ti
   };
 
   const getProgressWidth = () => {
-    if (block.isCompleted) return '100%';
-    if (block.progress) return `${block.progress}%`;
-    return '0%';
+    if (block.isCompleted) return 100;
+    if (block.progress) return block.progress;
+    return 0;
   };
 
   const onGestureEvent = Animated.event(
