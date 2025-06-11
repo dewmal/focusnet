@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Pressable, Alert, Animated, TextInput, ScrollView, Modal } from 'react-native';
-import { Clock, Play, CircleCheck as CheckCircle, Trash2, CreditCard as Edit, Save, X, Plus } from 'lucide-react-native';
+import { Clock, Play, CircleCheck as CheckCircle, Trash2, CreditCard as Edit, Save, X, Plus, ChevronDown, Palette } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
+import { loadCategories, BlockCategory } from '@/utils/storage';
 
 export interface TimeBlockData {
   id: string;
@@ -35,6 +36,75 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
   // Edit form state
   const [editTitle, setEditTitle] = useState(block.title);
   const [editTasks, setEditTasks] = useState([...block.tasks]);
+  const [editStartHour, setEditStartHour] = useState(12);
+  const [editStartMinute, setEditStartMinute] = useState(0);
+  const [editStartPeriod, setEditStartPeriod] = useState<'AM' | 'PM'>('AM');
+  const [editEndHour, setEditEndHour] = useState(12);
+  const [editEndMinute, setEditEndMinute] = useState(0);
+  const [editEndPeriod, setEditEndPeriod] = useState<'AM' | 'PM'>('PM');
+  const [editCategory, setEditCategory] = useState(block.category);
+  const [editColor, setEditColor] = useState(block.color);
+  const [categories, setCategories] = useState<BlockCategory[]>([]);
+  
+  // Dropdown states
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+
+  const predefinedColors = [
+    '#FF6B35', '#2E8B8B', '#8B4F9F', '#4F8B3B', 
+    '#B85C38', '#6B4E7D', '#7D6B4E', '#FF4444',
+    '#FFB800', '#4CAF50', '#2196F3', '#9C27B0'
+  ];
+
+  const hours = Array.from({ length: 12 }, (_, i) => i + 1);
+  const minutes = [0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55];
+  const periods = ['AM', 'PM'];
+
+  React.useEffect(() => {
+    loadCategoriesData();
+  }, []);
+
+  React.useEffect(() => {
+    // Parse current times when modal opens
+    if (isEditModalVisible) {
+      parseTimeToEdit();
+    }
+  }, [isEditModalVisible]);
+
+  const loadCategoriesData = async () => {
+    try {
+      const savedCategories = await loadCategories();
+      setCategories(savedCategories);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
+  };
+
+  const parseTimeToEdit = () => {
+    // Parse start time
+    const [startHour, startMinute] = block.startTime.split(':').map(Number);
+    const startPeriod = startHour >= 12 ? 'PM' : 'AM';
+    const displayStartHour = startHour === 0 ? 12 : startHour > 12 ? startHour - 12 : startHour;
+    
+    setEditStartHour(displayStartHour);
+    setEditStartMinute(startMinute);
+    setEditStartPeriod(startPeriod);
+
+    // Parse end time
+    const [endHour, endMinute] = block.endTime.split(':').map(Number);
+    const endPeriod = endHour >= 12 ? 'PM' : 'AM';
+    const displayEndHour = endHour === 0 ? 12 : endHour > 12 ? endHour - 12 : endHour;
+    
+    setEditEndHour(displayEndHour);
+    setEditEndMinute(endMinute);
+    setEditEndPeriod(endPeriod);
+  };
+
+  const formatTimeTo24Hour = (hour: number, minute: number, period: 'AM' | 'PM') => {
+    let hour24 = hour;
+    if (period === 'AM' && hour === 12) hour24 = 0;
+    if (period === 'PM' && hour !== 12) hour24 = hour + 12;
+    return `${hour24.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  };
 
   const formatTime12Hour = (time24: string) => {
     const [hour, minute] = time24.split(':').map(Number);
@@ -69,16 +139,14 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
     
     if (state === State.END) {
       if (translationX < -60) {
-        // Swipe left enough to reveal action buttons
         setIsSwipeActive(true);
         Animated.spring(translateX, {
-          toValue: -140, // Move block left to reveal buttons
+          toValue: -140,
           useNativeDriver: false,
           tension: 100,
           friction: 8,
         }).start();
       } else {
-        // Reset position for any other gesture
         resetSwipe();
       }
     }
@@ -95,14 +163,11 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
   };
 
   const handleEdit = () => {
-    // Reset edit form with current values
     setEditTitle(block.title);
     setEditTasks([...block.tasks]);
-    
-    // Reset swipe position immediately
+    setEditCategory(block.category);
+    setEditColor(block.color);
     resetSwipe();
-    
-    // Open edit modal
     setIsEditModalVisible(true);
   };
 
@@ -126,7 +191,6 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
           style: 'destructive',
           onPress: () => {
             onDelete(block.id);
-            // No need to reset swipe here as the component will unmount
           }
         }
       ]
@@ -145,7 +209,6 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
     if (!isSwipeActive) {
       onStartFocus();
     } else {
-      // If swiped, reset position instead of starting focus
       resetSwipe();
     }
   };
@@ -161,10 +224,26 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       return;
     }
 
+    // Validate times
+    const startTime24 = formatTimeTo24Hour(editStartHour, editStartMinute, editStartPeriod);
+    const endTime24 = formatTimeTo24Hour(editEndHour, editEndMinute, editEndPeriod);
+    
+    const startMinutes = parseInt(startTime24.split(':')[0]) * 60 + parseInt(startTime24.split(':')[1]);
+    const endMinutes = parseInt(endTime24.split(':')[0]) * 60 + parseInt(endTime24.split(':')[1]);
+    
+    if (endMinutes <= startMinutes) {
+      Alert.alert('Error', 'End time must be after start time');
+      return;
+    }
+
     const filteredTasks = editTasks.filter(task => task.trim() !== '');
     
     onEdit(block.id, {
       title: editTitle.trim(),
+      startTime: startTime24,
+      endTime: endTime24,
+      category: editCategory,
+      color: editColor,
       tasks: filteredTasks,
     });
 
@@ -172,9 +251,11 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
   };
 
   const handleCancelEdit = () => {
-    // Reset form to original values
     setEditTitle(block.title);
     setEditTasks([...block.tasks]);
+    setEditCategory(block.category);
+    setEditColor(block.color);
+    setActiveDropdown(null);
     setIsEditModalVisible(false);
   };
 
@@ -197,6 +278,65 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
     setEditTasks(newTasks);
   };
 
+  const renderDropdown = (type: string, options: any[], selectedValue: any, onSelect: (value: any) => void) => {
+    if (activeDropdown !== type) return null;
+
+    return (
+      <Modal
+        visible={true}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setActiveDropdown(null)}
+      >
+        <TouchableOpacity 
+          style={styles.dropdownOverlay}
+          activeOpacity={1}
+          onPress={() => setActiveDropdown(null)}
+        >
+          <View style={styles.dropdownModal}>
+            <View style={styles.dropdownHeader}>
+              <Text style={styles.dropdownTitle}>Select {type}</Text>
+              <TouchableOpacity onPress={() => setActiveDropdown(null)}>
+                <X size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.dropdownList} showsVerticalScrollIndicator={false}>
+              {options.map((option, index) => {
+                const value = typeof option === 'object' ? option.value || option.name : option;
+                const label = typeof option === 'object' ? option.label || option.name : 
+                  (type === 'minute' || type === 'hour') ? 
+                    option.toString().padStart(2, '0') : option.toString();
+                const isSelected = selectedValue === value;
+                
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    style={[styles.dropdownOption, isSelected && styles.dropdownOptionSelected]}
+                    onPress={() => {
+                      onSelect(value);
+                      setActiveDropdown(null);
+                    }}
+                    activeOpacity={0.7}
+                  >
+                    {typeof option === 'object' && option.color && (
+                      <View style={[styles.categoryDot, { backgroundColor: option.color }]} />
+                    )}
+                    <Text style={[
+                      styles.dropdownOptionText,
+                      isSelected && styles.dropdownOptionTextSelected
+                    ]}>
+                      {label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+    );
+  };
+
   const styles = StyleSheet.create({
     container: {
       marginVertical: 6,
@@ -206,7 +346,6 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       borderRadius: 12,
       overflow: 'hidden',
     },
-    // Action buttons positioned behind the block
     actionsContainer: {
       position: 'absolute',
       right: 0,
@@ -318,8 +457,8 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       backgroundColor: colors.surface,
       borderRadius: 20,
       padding: 24,
-      width: '90%',
-      maxHeight: '80%',
+      width: '95%',
+      maxHeight: '90%',
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 10 },
       shadowOpacity: 0.3,
@@ -357,6 +496,87 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
       padding: 12,
       fontSize: 16,
       color: colors.text,
+    },
+    timeSection: {
+      marginBottom: 20,
+    },
+    timeRow: {
+      flexDirection: 'row',
+      gap: 8,
+      marginBottom: 12,
+    },
+    timeDropdown: {
+      flex: 1,
+    },
+    timeDropdownButton: {
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      padding: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    timeDropdownText: {
+      fontSize: 14,
+      color: colors.text,
+      fontWeight: '500',
+    },
+    timeLabel: {
+      fontSize: 12,
+      color: colors.textSecondary,
+      fontWeight: '600',
+      marginBottom: 4,
+    },
+    categorySection: {
+      marginBottom: 20,
+    },
+    categoryDropdownButton: {
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 8,
+      padding: 12,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    categoryDropdownContent: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    categoryDot: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+    },
+    colorSection: {
+      marginBottom: 20,
+    },
+    colorsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: 12,
+    },
+    colorOption: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      borderWidth: 2,
+      borderColor: 'transparent',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    colorOptionSelected: {
+      borderColor: colors.text,
+      transform: [{ scale: 1.1 }],
+    },
+    colorPreview: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
     },
     tasksSection: {
       marginBottom: 20,
@@ -437,12 +657,66 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
     saveButtonText: {
       color: 'white',
     },
+    // Dropdown styles
+    dropdownOverlay: {
+      flex: 1,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    dropdownModal: {
+      backgroundColor: colors.surface,
+      borderRadius: 16,
+      width: '80%',
+      maxHeight: '60%',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 10 },
+      shadowOpacity: 0.3,
+      shadowRadius: 20,
+      elevation: 10,
+    },
+    dropdownHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      padding: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    dropdownTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    dropdownList: {
+      maxHeight: 250,
+    },
+    dropdownOption: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border + '30',
+      gap: 8,
+    },
+    dropdownOptionSelected: {
+      backgroundColor: colors.primary + '20',
+    },
+    dropdownOptionText: {
+      fontSize: 14,
+      color: colors.text,
+      fontWeight: '500',
+    },
+    dropdownOptionTextSelected: {
+      color: colors.primary,
+      fontWeight: '600',
+    },
   });
 
   return (
     <View style={styles.container}>
       <View style={styles.swipeContainer}>
-        {/* Action buttons positioned behind the block - always rendered */}
         <View style={styles.actionsContainer}>
           <TouchableOpacity 
             style={[styles.actionButton, styles.editButton]}
@@ -462,7 +736,6 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
           </TouchableOpacity>
         </View>
 
-        {/* Main block content that slides over the action buttons */}
         <PanGestureHandler
           ref={gestureRef}
           onGestureEvent={onGestureEvent}
@@ -518,7 +791,7 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
         </PanGestureHandler>
       </View>
 
-      {/* Edit Modal */}
+      {/* Enhanced Edit Modal */}
       <Modal
         visible={isEditModalVisible}
         transparent
@@ -549,6 +822,120 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
                   placeholderTextColor={colors.textSecondary}
                   maxLength={50}
                 />
+              </View>
+
+              {/* Time Section */}
+              <View style={styles.timeSection}>
+                <Text style={styles.formLabel}>Time</Text>
+                
+                {/* Start Time */}
+                <Text style={styles.timeLabel}>Start Time</Text>
+                <View style={styles.timeRow}>
+                  <View style={styles.timeDropdown}>
+                    <TouchableOpacity 
+                      style={styles.timeDropdownButton}
+                      onPress={() => setActiveDropdown('startHour')}
+                    >
+                      <Text style={styles.timeDropdownText}>
+                        {editStartHour.toString().padStart(2, '0')}
+                      </Text>
+                      <ChevronDown size={16} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.timeDropdown}>
+                    <TouchableOpacity 
+                      style={styles.timeDropdownButton}
+                      onPress={() => setActiveDropdown('startMinute')}
+                    >
+                      <Text style={styles.timeDropdownText}>
+                        {editStartMinute.toString().padStart(2, '0')}
+                      </Text>
+                      <ChevronDown size={16} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.timeDropdown}>
+                    <TouchableOpacity 
+                      style={styles.timeDropdownButton}
+                      onPress={() => setActiveDropdown('startPeriod')}
+                    >
+                      <Text style={styles.timeDropdownText}>{editStartPeriod}</Text>
+                      <ChevronDown size={16} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* End Time */}
+                <Text style={styles.timeLabel}>End Time</Text>
+                <View style={styles.timeRow}>
+                  <View style={styles.timeDropdown}>
+                    <TouchableOpacity 
+                      style={styles.timeDropdownButton}
+                      onPress={() => setActiveDropdown('endHour')}
+                    >
+                      <Text style={styles.timeDropdownText}>
+                        {editEndHour.toString().padStart(2, '0')}
+                      </Text>
+                      <ChevronDown size={16} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.timeDropdown}>
+                    <TouchableOpacity 
+                      style={styles.timeDropdownButton}
+                      onPress={() => setActiveDropdown('endMinute')}
+                    >
+                      <Text style={styles.timeDropdownText}>
+                        {editEndMinute.toString().padStart(2, '0')}
+                      </Text>
+                      <ChevronDown size={16} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.timeDropdown}>
+                    <TouchableOpacity 
+                      style={styles.timeDropdownButton}
+                      onPress={() => setActiveDropdown('endPeriod')}
+                    >
+                      <Text style={styles.timeDropdownText}>{editEndPeriod}</Text>
+                      <ChevronDown size={16} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </View>
+
+              {/* Category Section */}
+              <View style={styles.categorySection}>
+                <Text style={styles.formLabel}>Category</Text>
+                <TouchableOpacity 
+                  style={styles.categoryDropdownButton}
+                  onPress={() => setActiveDropdown('category')}
+                >
+                  <View style={styles.categoryDropdownContent}>
+                    <View style={[styles.categoryDot, { backgroundColor: editColor }]} />
+                    <Text style={styles.timeDropdownText}>{editCategory}</Text>
+                  </View>
+                  <ChevronDown size={16} color={colors.textSecondary} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Color Section */}
+              <View style={styles.colorSection}>
+                <Text style={styles.formLabel}>Color</Text>
+                <View style={styles.colorsGrid}>
+                  {predefinedColors.map((color) => (
+                    <TouchableOpacity
+                      key={color}
+                      style={[
+                        styles.colorOption,
+                        editColor === color && styles.colorOptionSelected,
+                      ]}
+                      onPress={() => setEditColor(color)}
+                      activeOpacity={0.7}
+                    >
+                      <View
+                        style={[styles.colorPreview, { backgroundColor: color }]}
+                      />
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
 
               {/* Tasks Section */}
@@ -597,11 +984,26 @@ export default function TimeBlock({ block, onPress, onStartFocus, onDelete, onEd
                 onPress={handleSaveEdit}
               >
                 <Save size={16} color="white" />
-                <Text style={[styles.modalButtonText, styles.saveButtonText]}>Save</Text>
+                <Text style={[styles.modalButtonText, styles.saveButtonText]}>Save Changes</Text>
               </TouchableOpacity>
             </View>
           </View>
         </View>
+
+        {/* Dropdown Modals */}
+        {renderDropdown('startHour', hours, editStartHour, setEditStartHour)}
+        {renderDropdown('startMinute', minutes, editStartMinute, setEditStartMinute)}
+        {renderDropdown('startPeriod', periods, editStartPeriod, setEditStartPeriod)}
+        {renderDropdown('endHour', hours, editEndHour, setEditEndHour)}
+        {renderDropdown('endMinute', minutes, editEndMinute, setEditEndMinute)}
+        {renderDropdown('endPeriod', periods, editEndPeriod, setEditEndPeriod)}
+        {renderDropdown('category', categories, editCategory, (value) => {
+          setEditCategory(value);
+          const selectedCategory = categories.find(c => c.name === value);
+          if (selectedCategory) {
+            setEditColor(selectedCategory.color);
+          }
+        })}
       </Modal>
     </View>
   );
