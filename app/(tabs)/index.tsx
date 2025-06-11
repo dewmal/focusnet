@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Alert, Dimensions, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Plus, Calendar, TrendingUp, ChevronLeft, ChevronRight } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -15,6 +16,7 @@ export default function TodayScreen() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const screenWidth = Dimensions.get('window').width;
   const isWeb = Platform.OS === 'web';
 
@@ -303,8 +305,10 @@ export default function TodayScreen() {
     },
     content: {
       paddingHorizontal: Math.max(20, screenWidth * 0.05),
+      paddingLeft: Math.max(insets.left + 20, screenWidth * 0.05),
+      paddingRight: Math.max(insets.right + 20, screenWidth * 0.05),
       paddingTop: 16,
-      paddingBottom: 32,
+      paddingBottom: Math.max(insets.bottom + 32, 32),
     },
     addButton: {
       backgroundColor: colors.primary,
@@ -482,7 +486,7 @@ export default function TodayScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* Action Bar Header */}
       <MobileHeader
         title={isToday ? getGreeting() : formatDate(selectedDate)}
@@ -604,6 +608,6 @@ export default function TodayScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }

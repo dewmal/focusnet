@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Dimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Bell, Settings, User, Menu } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -37,15 +38,18 @@ export default function MobileHeader({
   minimal = false,
 }: MobileHeaderProps) {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const screenWidth = Dimensions.get('window').width;
   const isSmallScreen = screenWidth < 400;
 
   const styles = StyleSheet.create({
     container: {
       backgroundColor: backgroundColor || colors.background,
-      paddingTop: Platform.OS === 'ios' ? 50 : Platform.OS === 'web' ? 20 : 20,
+      paddingTop: Math.max(insets.top, Platform.OS === 'web' ? 20 : 10),
       paddingBottom: minimal ? 8 : 16,
       paddingHorizontal: Math.max(20, screenWidth * 0.05),
+      paddingLeft: Math.max(insets.left + 20, screenWidth * 0.05),
+      paddingRight: Math.max(insets.right + 20, screenWidth * 0.05),
       borderBottomWidth: minimal ? 0 : 1,
       borderBottomColor: colors.border,
       shadowColor: minimal ? 'transparent' : '#000',
@@ -53,6 +57,7 @@ export default function MobileHeader({
       shadowOpacity: minimal ? 0 : 0.05,
       shadowRadius: minimal ? 0 : 8,
       elevation: minimal ? 0 : 3,
+      zIndex: 1000, // Ensure header stays above other content
     },
     headerRow: {
       flexDirection: 'row',
@@ -76,15 +81,11 @@ export default function MobileHeader({
       fontWeight: '700',
       color: colors.text,
       marginBottom: subtitle ? 2 : 0,
-      numberOfLines: 1,
-      ellipsizeMode: 'tail',
     },
     subtitle: {
       fontSize: isSmallScreen ? 12 : 13,
       color: colors.textSecondary,
       fontWeight: '500',
-      numberOfLines: 1,
-      ellipsizeMode: 'tail',
     },
     rightSection: {
       flexDirection: 'row',
@@ -138,8 +139,8 @@ export default function MobileHeader({
           
           {(title || subtitle) && (
             <View style={styles.titleContainer}>
-              {title && <Text style={styles.title} numberOfLines={1}>{title}</Text>}
-              {subtitle && <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>}
+              {title && <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">{title}</Text>}
+              {subtitle && <Text style={styles.subtitle} numberOfLines={1} ellipsizeMode="tail">{subtitle}</Text>}
             </View>
           )}
         </View>

@@ -9,7 +9,10 @@ import {
   Alert,
   SafeAreaView,
   Modal,
+  Dimensions,
+  Platform,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowLeft, Target, Calendar, Clock, Tag, Plus, Trash2, Save, ChevronDown } from 'lucide-react-native';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -19,6 +22,9 @@ import MobileHeader from '@/components/MobileHeader';
 
 export default function CreateBlockScreen() {
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const screenWidth = Dimensions.get('window').width;
+  
   const [title, setTitle] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]); // Today's date
   const [startHour, setStartHour] = useState(9);
@@ -306,7 +312,7 @@ export default function CreateBlockScreen() {
           activeOpacity={1}
           onPress={() => setActiveDropdown(null)}
         >
-          <View style={styles.dropdownModal}>
+          <View style={[styles.dropdownModal, { maxWidth: screenWidth * 0.9 }]}>
             <View style={styles.dropdownHeader}>
               <Text style={styles.dropdownTitle}>{title}</Text>
               <TouchableOpacity onPress={() => setActiveDropdown(null)}>
@@ -356,7 +362,10 @@ export default function CreateBlockScreen() {
       flex: 1,
     },
     content: {
-      padding: 20,
+      padding: Math.max(20, screenWidth * 0.05),
+      paddingLeft: Math.max(insets.left + 20, screenWidth * 0.05),
+      paddingRight: Math.max(insets.right + 20, screenWidth * 0.05),
+      paddingBottom: Math.max(insets.bottom + 32, 32),
     },
     section: {
       marginBottom: 32,
@@ -397,6 +406,7 @@ export default function CreateBlockScreen() {
       fontSize: 18,
       color: colors.text,
       fontWeight: '600',
+      minHeight: 56,
     },
     titleInputError: {
       borderColor: colors.error,
@@ -423,6 +433,7 @@ export default function CreateBlockScreen() {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+      minHeight: 56,
     },
     dateDropdownButtonActive: {
       borderColor: colors.primary,
@@ -451,6 +462,7 @@ export default function CreateBlockScreen() {
       fontSize: 14,
       color: colors.text,
       fontWeight: '500',
+      minHeight: 48,
     },
     taskButton: {
       width: 44,
@@ -475,6 +487,7 @@ export default function CreateBlockScreen() {
       borderRadius: 16,
       gap: 10,
       backgroundColor: colors.surface,
+      minHeight: 56,
     },
     addTaskText: {
       fontSize: 14,
@@ -530,6 +543,7 @@ export default function CreateBlockScreen() {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+      minHeight: 56,
     },
     durationDropdownButtonActive: {
       borderColor: colors.primary,
@@ -576,6 +590,7 @@ export default function CreateBlockScreen() {
       backgroundColor: colors.surface,
       gap: 10,
       minWidth: 120,
+      minHeight: 48,
     },
     categoryChipSelected: {
       borderColor: colors.primary,
@@ -627,6 +642,9 @@ export default function CreateBlockScreen() {
     footer: {
       flexDirection: 'row',
       padding: 20,
+      paddingLeft: Math.max(insets.left + 20, 20),
+      paddingRight: Math.max(insets.right + 20, 20),
+      paddingBottom: Math.max(insets.bottom + 20, 20),
       borderTopWidth: 1,
       borderTopColor: colors.border,
       gap: 16,
@@ -645,6 +663,7 @@ export default function CreateBlockScreen() {
       shadowOpacity: 0.3,
       shadowRadius: 8,
       elevation: 4,
+      minHeight: 56,
     },
     cancelButton: {
       backgroundColor: colors.surface,
@@ -674,11 +693,12 @@ export default function CreateBlockScreen() {
       backgroundColor: 'rgba(0, 0, 0, 0.5)',
       justifyContent: 'center',
       alignItems: 'center',
+      padding: 20,
     },
     dropdownModal: {
       backgroundColor: colors.surface,
       borderRadius: 20,
-      width: '80%',
+      width: '100%',
       maxHeight: '60%',
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 10 },
@@ -712,6 +732,8 @@ export default function CreateBlockScreen() {
       paddingHorizontal: 20,
       borderBottomWidth: 1,
       borderBottomColor: colors.border + '30',
+      minHeight: 48,
+      justifyContent: 'center',
     },
     dropdownOptionSelected: {
       backgroundColor: colors.primary + '20',
@@ -729,7 +751,7 @@ export default function CreateBlockScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* Header */}
       <MobileHeader
         title="Create Time Block"
@@ -1057,6 +1079,6 @@ export default function CreateBlockScreen() {
 
       {/* Dropdown Modal */}
       {renderDropdownModal()}
-    </SafeAreaView>
+    </View>
   );
 }

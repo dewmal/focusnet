@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, Alert, ScrollView, Dimensions, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ArrowLeft, Coffee, Zap, CircleCheck as CheckCircle, Clock, TrendingUp, Target, Plus } from 'lucide-react-native';
 import { router } from 'expo-router';
 import FocusTimer from '@/components/FocusTimer';
@@ -14,6 +15,8 @@ export default function FocusScreen() {
   const [allBlocks, setAllBlocks] = useState<TimeBlockData[]>([]);
   const [todayBlocks, setTodayBlocks] = useState<TimeBlockData[]>([]);
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
+  const screenWidth = Dimensions.get('window').width;
 
   useEffect(() => {
     loadData();
@@ -168,8 +171,11 @@ export default function FocusScreen() {
       flex: 1,
     },
     content: {
-      paddingHorizontal: 20,
+      paddingHorizontal: Math.max(20, screenWidth * 0.05),
+      paddingLeft: Math.max(insets.left + 20, screenWidth * 0.05),
+      paddingRight: Math.max(insets.right + 20, screenWidth * 0.05),
       paddingTop: 16,
+      paddingBottom: Math.max(insets.bottom + 32, 32),
     },
     currentTimeContainer: {
       alignItems: 'center',
@@ -424,7 +430,7 @@ export default function FocusScreen() {
 
   if (isInFocusMode && activeBlock) {
     return (
-      <SafeAreaView style={styles.focusContainer}>
+      <View style={styles.focusContainer}>
         <FocusTimer
           duration={getBlockDuration(activeBlock)}
           onComplete={handleFocusComplete}
@@ -432,12 +438,12 @@ export default function FocusScreen() {
           blockTitle={activeBlock.title}
           blockColor={activeBlock.color}
         />
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* Action Bar Header */}
       <MobileHeader
         title="Focus Mode"
@@ -593,6 +599,6 @@ export default function FocusScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
